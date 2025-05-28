@@ -1,4 +1,7 @@
+package lox;
+
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -30,9 +33,11 @@ public class Main {
     }
 
     if (fileContents.length() > 0) {
-      throw new RuntimeException("Scanner not implemented");
-    } else {
-      System.out.println("EOF  null"); // Placeholder, replace this line when implementing the scanner
+      var tokens = new Scanner().scan(new StringReader(fileContents));
+      for (var token : tokens) {
+        System.out.println(token);
+      }
     }
+    System.out.println("EOF  null"); // Placeholder, replace this line when implementing the scanner
   }
 }
