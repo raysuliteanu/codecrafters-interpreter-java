@@ -15,4 +15,9 @@ public class LoxException extends RuntimeException {
   public LoxException(Throwable cause) {
     super(cause);
   }
+
+  @Override
+  public String toString() {
+    return getLocalizedMessage();
+  }
 }

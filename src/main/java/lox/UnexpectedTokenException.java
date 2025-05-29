@@ -2,9 +2,13 @@
 package lox;
 
 public class UnexpectedTokenException extends ParseException {
-  String actual;
+  Character actual;
 
-  public UnexpectedTokenException(String actual, Span span) {
+  public UnexpectedTokenException(Character actual) {
+    this(actual, null);
+  }
+
+  public UnexpectedTokenException(Character actual, Span span) {
     super("Unexpected token", span);
     this.actual = actual;
   }

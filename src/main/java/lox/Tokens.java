@@ -12,6 +12,7 @@ public class Tokens {
     PLUS("+"),
     DOT("."),
     COMMA(","),
+    SLASH("/"),
     LESS("<"),
     LESS_EQ("<="),
     GREATER(">"),
@@ -20,6 +21,8 @@ public class Tokens {
     BANG_EQ("!="),
     EQ("="),
     EQ_EQ("=="),
+
+    // TODO: is this the right way to do this ...
     NUMBER(""),
     STRING(""),
     IDENTIFIER("");

@@ -24,6 +24,6 @@ public class ParseException extends LoxException {
 
   @Override
   public String toString() {
-    return "[line " + span.line() + "]: " + super.toString();
+    return "[line " + (getSpan() != null ? getSpan().line() : "?") + "]: " + super.toString();
   }
 }

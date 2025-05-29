@@ -1,16 +1,11 @@
 package lox;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class Main {
   public static void main(String[] args) {
-    // You can use print statements as follows for debugging, they'll be visible
-    // when running tests.
-    System.err.println("Logs from your program will appear here!");
-
     if (args.length < 2) {
       System.err.println("Usage: ./your_program.sh tokenize <filename>");
       System.exit(1);
@@ -33,11 +28,11 @@ public class Main {
     }
 
     if (fileContents.length() > 0) {
-      var tokens = new Parser().scan(new StringReader(fileContents));
+      var tokens = new Scanner().scan(fileContents);
       for (var token : tokens) {
         System.out.println(token);
       }
+      System.out.println("EOF  null");
     }
-    System.out.println("EOF  null"); // Placeholder, replace this line when implementing the scanner
   }
 }

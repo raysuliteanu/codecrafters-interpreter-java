@@ -1,7 +1,5 @@
 package lox;
 
-import java.io.StringReader;
-
 import org.junit.jupiter.api.Test;
 
 import lox.Tokens.Lexemes;
@@ -9,11 +7,11 @@ import static lox.Tokens.TokenBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ParserTest {
+public class ScannerTest {
   @Test
   void scanSingleCharLitteral() {
     String input = "{}(),;+-*.=<>!";
-    var tokens = new Parser().scan(new StringReader(input));
+    var tokens = new Scanner().scan(input);
     assertThat(tokens.size()).isEqualTo(input.length());
     assertThat(tokens).containsExactly(
         new TokenBuilder(Lexemes.LEFT_BRACE).build(),
@@ -42,7 +40,7 @@ public class ParserTest {
   @Test
   void scanTwoCharLitteral() {
     String input = "==<=>=!=";
-    var tokens = new Parser().scan(new StringReader(input));
+    var tokens = new Scanner().scan(input);
     assertThat(tokens.size()).isEqualTo(4);
     assertThat(tokens).containsExactly(
         new TokenBuilder(Lexemes.EQ_EQ).build(),
