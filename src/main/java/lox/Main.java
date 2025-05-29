@@ -33,7 +33,7 @@ public class Main {
     }
 
     if (fileContents.length() > 0) {
-      var tokens = new Scanner().scan(new StringReader(fileContents));
+      var tokens = new Parser().scan(new StringReader(fileContents));
       for (var token : tokens) {
         System.out.println(token);
       }
