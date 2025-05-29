@@ -2,10 +2,8 @@ package lox;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.LineNumberReader;
 import java.io.PushbackReader;
 import java.io.Reader;
-import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,11 +12,10 @@ import static lox.Tokens.Lexemes;
 
 public class Parser {
   public List<Token> scan(Reader source) {
-    PeekableLineNumberReader reader = new PeekableLineNumberReader(source);
-
     var tokens = new ArrayList<Token>();
-    try {
+    try (PushbackLineNumberReader reader = new PushbackLineNumberReader(source)) {
       for (int c = reader.read(); c != -1; c = reader.read()) {
+        long start = reader.offset() - 1;
         TokenBuilder token = switch (c) {
           case '\n', '\r' -> null;
           case '{' -> new TokenBuilder(Lexemes.LEFT_BRACE);
@@ -31,26 +28,65 @@ public class Parser {
           case '-' -> new TokenBuilder(Lexemes.MINUS);
           case ';' -> new TokenBuilder(Lexemes.SEMICOLON);
           case '*' -> new TokenBuilder(Lexemes.STAR);
+          case '<' -> {
+            int next = reader.read();
+            if (next == '=') {
+              yield new TokenBuilder(Lexemes.LESS_EQ);
+            } else if (next != -1) {
+              reader.pushback((char) next);
+            }
+            yield new TokenBuilder(Lexemes.LESS);
+          }
+          case '>' -> {
+            int next = reader.read();
+            if (next == '=') {
+              yield new TokenBuilder(Lexemes.GREATER_EQ);
+            } else if (next != -1) {
+              reader.pushback((char) next);
+            }
+            yield new TokenBuilder(Lexemes.GREATER);
+          }
+          case '!' -> {
+            int next = reader.read();
+            if (next == '=') {
+              yield new TokenBuilder(Lexemes.BANG_EQ);
+            } else if (next != -1) {
+              reader.pushback((char) next);
+            }
+            yield new TokenBuilder(Lexemes.BANG);
+          }
+          case '=' -> {
+            int next = reader.read();
+            if (next == '=') {
+              yield new TokenBuilder(Lexemes.EQ_EQ);
+            } else if (next != -1) {
+              reader.pushback((char) next);
+            }
+            yield new TokenBuilder(Lexemes.EQ);
+          }
           default -> throw new RuntimeException("unknown token: " + c);
         };
 
-        token.withSpan(Span.of(reader.line(), reader.offset(), 1)).build();
+        long current = reader.offset();
+        token.withSpan(reader.line(), start, current - start).build();
         tokens.add(token.build());
-        ++offset;
       }
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new LoxException(e);
+    } catch (ParseException e) {
+      System.err.println(e);
     }
+
     return tokens;
   }
 
-  static class PeekableLineNumberReader implements Closeable {
-    long line;
+  static class PushbackLineNumberReader implements Closeable {
+    long line = 1;
     long offset;
     PushbackReader reader;
 
-    PeekableLineNumberReader(Reader r) {
-      this.reader = new PushbackReader(r);
+    PushbackLineNumberReader(Reader r) {
+      reader = new PushbackReader(r);
     }
 
     @Override
@@ -60,12 +96,22 @@ public class Parser {
 
     public int read() throws IOException {
       int c = reader.read();
-      if (c == -1)
+      if (c == -1) {
         return c;
+      }
 
       ++offset;
 
+      if (c == '\n') {
+        ++line;
+      }
+
       return c;
+    }
+
+    public void pushback(char c) throws IOException {
+      reader.unread(new char[] { c });
+      --offset;
     }
 
     public long line() {

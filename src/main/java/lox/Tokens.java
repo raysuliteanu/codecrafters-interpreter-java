@@ -12,9 +12,17 @@ public class Tokens {
     PLUS("+"),
     DOT("."),
     COMMA(","),
+    LESS("<"),
+    LESS_EQ("<="),
+    GREATER(">"),
+    GREATER_EQ(">="),
+    BANG("!"),
+    BANG_EQ("!="),
+    EQ("="),
+    EQ_EQ("=="),
     NUMBER(""),
     STRING(""),
-    IDENTIfier("");
+    IDENTIFIER("");
 
     public final String lexeme;
 
@@ -44,6 +52,10 @@ public class Tokens {
     public TokenBuilder withValue(Object value) {
       this.value = value;
       return this;
+    }
+
+    public TokenBuilder withSpan(long line, long offset, long length) {
+      return this.withSpan(Span.of(line, offset, length));
     }
 
     public TokenBuilder withSpan(Span span) {
