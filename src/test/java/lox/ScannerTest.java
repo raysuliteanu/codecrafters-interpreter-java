@@ -58,4 +58,83 @@ public class ScannerTest {
       expectedOffset += length;
     }
   }
+
+  @Test
+  void scanWithWhitespace() {
+    String input = "{ } ( )";
+    var tokens = new Scanner().scan(input);
+    assertThat(tokens.size()).isEqualTo(4);
+    assertThat(tokens).containsExactly(
+        new TokenBuilder(Lexemes.LEFT_BRACE).build(),
+        new TokenBuilder(Lexemes.RIGHT_BRACE).build(),
+        new TokenBuilder(Lexemes.LEFT_PAREN).build(),
+        new TokenBuilder(Lexemes.RIGHT_PAREN).build());
+  }
+
+  @Test
+  void scanWithNewlines() {
+    String input = "{\n}\n(";
+    var tokens = new Scanner().scan(input);
+    assertThat(tokens.size()).isEqualTo(3);
+    assertThat(tokens.get(0).span().line()).isEqualTo(1);
+    assertThat(tokens.get(1).span().line()).isEqualTo(2);
+    assertThat(tokens.get(2).span().line()).isEqualTo(3);
+  }
+
+  @Test
+  void scanLineComments() {
+    String input = "// this is a comment\n+";
+    var tokens = new Scanner().scan(input);
+    assertThat(tokens.size()).isEqualTo(1);
+    assertThat(tokens.get(0)).isEqualTo(new TokenBuilder(Lexemes.PLUS).build());
+    assertThat(tokens.get(0).span().line()).isEqualTo(2);
+  }
+
+  @Test
+  void scanSlashWithoutComment() {
+    String input = "/ +";
+    var tokens = new Scanner().scan(input);
+    assertThat(tokens.size()).isEqualTo(2);
+    assertThat(tokens).containsExactly(
+        new TokenBuilder(Lexemes.SLASH).build(),
+        new TokenBuilder(Lexemes.PLUS).build());
+  }
+
+  @Test
+  void scanEmptyInput() {
+    String input = "";
+    var tokens = new Scanner().scan(input);
+    assertThat(tokens).isEmpty();
+  }
+
+  @Test
+  void scanOnlyWhitespace() {
+    String input = "   \t\r\n  ";
+    var tokens = new Scanner().scan(input);
+    assertThat(tokens).isEmpty();
+  }
+
+  @Test
+  void scanMixedOperators() {
+    String input = "!= == <= >= < > ! =";
+    var tokens = new Scanner().scan(input);
+    assertThat(tokens.size()).isEqualTo(8);
+    assertThat(tokens).containsExactly(
+        new TokenBuilder(Lexemes.BANG_EQ).build(),
+        new TokenBuilder(Lexemes.EQ_EQ).build(),
+        new TokenBuilder(Lexemes.LESS_EQ).build(),
+        new TokenBuilder(Lexemes.GREATER_EQ).build(),
+        new TokenBuilder(Lexemes.LESS).build(),
+        new TokenBuilder(Lexemes.GREATER).build(),
+        new TokenBuilder(Lexemes.BANG).build(),
+        new TokenBuilder(Lexemes.EQ).build());
+  }
+
+  @Test
+  void scanCommentAtEndOfFile() {
+    String input = "+ // comment at end";
+    var tokens = new Scanner().scan(input);
+    assertThat(tokens.size()).isEqualTo(1);
+    assertThat(tokens.get(0)).isEqualTo(new TokenBuilder(Lexemes.PLUS).build());
+  }
 }
