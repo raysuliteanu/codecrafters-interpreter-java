@@ -13,6 +13,16 @@ public class Scanner {
     return oc.isPresent() && oc.get() == c;
   }
 
+  Tuple thisOrThat(final PeekableIterator chars, final Character match, final Lexemes combo, final Lexemes single,
+      final long offset) {
+    if (matches(chars.peek(), match)) {
+      chars.next(); // eat matching '='
+      return Tuples.of(new TokenBuilder(combo), offset + 1);
+    } else {
+      return Tuples.of(new TokenBuilder(single), offset);
+    }
+  }
+
   public List<Token> scan(CharSequence source) {
     final var tokens = new ArrayList<Token>();
     final var chars = new DefaultPeekableIterator(source);
@@ -41,45 +51,41 @@ public class Scanner {
           case ';' -> new TokenBuilder(Lexemes.SEMICOLON);
           case '*' -> new TokenBuilder(Lexemes.STAR);
           case '<' -> {
-            if (matches(chars.peek(), '=')) {
-              chars.next(); // eat matching '='
-              ++offset;
-              yield new TokenBuilder(Lexemes.LESS_EQ);
-            } else {
-              yield new TokenBuilder(Lexemes.LESS);
-            }
+            var res = thisOrThat(chars, '=', Lexemes.LESS_EQ, Lexemes.LESS, offset);
+
+            var tokenBuilder = (TokenBuilder) res.get(0);
+            offset = (long) res.get(1);
+
+            yield tokenBuilder;
           }
           case '>' -> {
-            if (matches(chars.peek(), '=')) {
-              chars.next(); // eat matching '='
-              ++offset;
-              yield new TokenBuilder(Lexemes.GREATER_EQ);
-            } else {
-              yield new TokenBuilder(Lexemes.GREATER);
-            }
+            var res = thisOrThat(chars, '=', Lexemes.GREATER_EQ, Lexemes.GREATER, offset);
+
+            var tokenBuilder = (TokenBuilder) res.get(0);
+            offset = (long) res.get(1);
+
+            yield tokenBuilder;
           }
           case '!' -> {
-            if (matches(chars.peek(), '=')) {
-              chars.next(); // eat matching '='
-              ++offset;
-              yield new TokenBuilder(Lexemes.BANG_EQ);
-            } else {
-              yield new TokenBuilder(Lexemes.BANG);
-            }
+            var res = thisOrThat(chars, '=', Lexemes.BANG_EQ, Lexemes.BANG, offset);
+
+            var tokenBuilder = (TokenBuilder) res.get(0);
+            offset = (long) res.get(1);
+
+            yield tokenBuilder;
           }
           case '=' -> {
-            if (matches(chars.peek(), '=')) {
-              chars.next(); // eat matching '='
-              ++offset;
-              yield new TokenBuilder(Lexemes.EQ_EQ);
-            } else {
-              yield new TokenBuilder(Lexemes.EQ);
-            }
+            var res = thisOrThat(chars, '=', Lexemes.EQ_EQ, Lexemes.EQ, offset);
+
+            var tokenBuilder = (TokenBuilder) res.get(0);
+            offset = (long) res.get(1);
+
+            yield tokenBuilder;
           }
           case '/' -> {
             // check for line comment
             if (matches(chars.peek(), '/')) {
-              while (!matches(chars.peek(), '\n')) {
+              while (chars.hasNext() && !matches(chars.peek(), '\n')) {
                 chars.next(); // eat matching '='
               }
               yield null;
