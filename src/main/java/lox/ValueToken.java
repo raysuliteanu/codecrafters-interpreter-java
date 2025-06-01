@@ -11,4 +11,13 @@ public class ValueToken<T> extends SpanningToken {
   public T value() {
     return this.value;
   }
+
+  @Override
+  public String toString() {
+    if (value instanceof String s) {
+      return lexeme.name() + " " + "\"" + s + "\"" + " " + s;
+    }
+
+    return lexeme.name() + " " + value + " " + value;
+  }
 }

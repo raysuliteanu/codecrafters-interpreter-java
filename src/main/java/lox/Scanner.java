@@ -4,15 +4,16 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import static lox.Tokens.TokenBuilder;
+import static lox.Util.matches;
+import static lox.Util.matchesPredicate;
+import static lox.LogUtil.log;
+import static lox.LogUtil.trace;
 import static lox.Tokens.Lexemes;
 
 public class Scanner {
-  boolean matches(Optional<Character> oc, Character c) {
-    return oc.isPresent() && oc.get() == c;
-  }
-
   Tuple thisOrThat(final PeekableIterator chars, final Character match, final Lexemes combo, final Lexemes single,
       final long offset) {
     if (matches(chars.peek(), match)) {
@@ -93,6 +94,55 @@ public class Scanner {
               yield new TokenBuilder(Lexemes.SLASH);
             }
           }
+          case '"' -> {
+            trace("found start of quoted string");
+            // check for quoted string
+            StringBuilder sb = new StringBuilder();
+            while (chars.hasNext() && !matches(chars.peek(), '"')) {
+              Character next = chars.next();
+              trace("adding '" + next + "'");
+              sb.append(next);
+            }
+
+            if (!chars.hasNext()) {
+              throw new UnterminatedStringException(sb.toString(), Span.of(line, offset, 0));
+            }
+
+            var _n = chars.next(); // eat closing '"'
+            assert _n == '"' : "expected closing '\"'";
+            yield new TokenBuilder(Lexemes.STRING).withValue(sb.toString());
+          }
+          case Character ch when Character.isDigit(ch) -> {
+            trace("found start of number");
+            // TODO: parse input to number token
+            yield new TokenBuilder(Lexemes.NUMBER).withValue(null);
+          }
+          case Character ch when Character.isLetter(ch) -> {
+            trace("found start of keyword or identifier");
+            StringBuilder sb = new StringBuilder();
+            sb.append(ch);
+            while (chars.hasNext() && matchesPredicate(chars.peek(),
+                new Predicate<Character>() {
+                  @Override
+                  public boolean test(Character t) {
+                    return Character.isLetter(t) || t == '_';
+                  }
+                })) {
+              Character next = chars.next();
+              trace("adding '" + next + "'");
+              sb.append(next);
+            }
+
+            var val = sb.toString();
+            if (Lexemes.isKeyword(val.toUpperCase())) {
+              trace("found keyword: " + sb);
+              yield new TokenBuilder(Lexemes.valueOf(val.toUpperCase()));
+            } else {
+              trace("found identifier: " + sb);
+              yield new TokenBuilder(Lexemes.IDENTIFIER).withValue(val);
+            }
+
+          }
           default -> throw new UnexpectedTokenException(c, Span.of(line, offset, 1));
         };
 
@@ -102,7 +152,7 @@ public class Scanner {
         }
       }
     } catch (ParseException e) {
-      System.err.println(e);
+      log(e.toString());
     }
 
     return tokens;

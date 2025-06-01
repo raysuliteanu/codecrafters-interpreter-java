@@ -22,10 +22,28 @@ public class Tokens {
     EQ("="),
     EQ_EQ("=="),
 
-    // TODO: is this the right way to do this ...
-    NUMBER(""),
-    STRING(""),
-    IDENTIFIER("");
+    // value tokens
+    NUMBER,
+    STRING,
+    IDENTIFIER,
+
+    // keywords
+    TRUE("true"),
+    FALSE("false"),
+    NIL("nil"),
+    AND("and"),
+    OR("or"),
+    CLASS("class"),
+    FOR("for"),
+    FUN("fun"),
+    IF("if"),
+    ELSE("else"),
+    RETURN("return"),
+    SUPER("super"),
+    THIS("this"),
+    VAR("var"),
+    WHILE("while"),
+    PRINT("print");
 
     public final String lexeme;
 
@@ -33,8 +51,31 @@ public class Tokens {
       this.lexeme = lexeme;
     }
 
+    private Lexemes() {
+      this.lexeme = null;
+    }
+
     public String lexeme() {
       return lexeme;
+    }
+
+    public static boolean isKeyword(String val) {
+      return val.equalsIgnoreCase(TRUE.name()) ||
+          val.equalsIgnoreCase(Lexemes.FALSE.name()) ||
+          val.equalsIgnoreCase(Lexemes.NIL.name()) ||
+          val.equalsIgnoreCase(Lexemes.AND.name()) ||
+          val.equalsIgnoreCase(Lexemes.OR.name()) ||
+          val.equalsIgnoreCase(Lexemes.CLASS.name()) ||
+          val.equalsIgnoreCase(Lexemes.FOR.name()) ||
+          val.equalsIgnoreCase(Lexemes.FUN.name()) ||
+          val.equalsIgnoreCase(Lexemes.IF.name()) ||
+          val.equalsIgnoreCase(Lexemes.ELSE.name()) ||
+          val.equalsIgnoreCase(Lexemes.RETURN.name()) ||
+          val.equalsIgnoreCase(Lexemes.SUPER.name()) ||
+          val.equalsIgnoreCase(Lexemes.THIS.name()) ||
+          val.equalsIgnoreCase(Lexemes.WHILE.name()) ||
+          val.equalsIgnoreCase(Lexemes.VAR.name()) ||
+          val.equalsIgnoreCase(Lexemes.PRINT.name());
     }
 
     public String toString() {

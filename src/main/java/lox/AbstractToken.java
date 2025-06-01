@@ -1,7 +1,7 @@
 package lox;
 
 public abstract class AbstractToken implements Token {
-  private final Tokens.Lexemes lexeme;
+  protected final Tokens.Lexemes lexeme;
 
   protected AbstractToken(Tokens.Lexemes lexeme) {
     this.lexeme = lexeme;

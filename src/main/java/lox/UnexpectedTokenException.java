@@ -1,4 +1,3 @@
-
 package lox;
 
 public class UnexpectedTokenException extends ParseException {
