@@ -108,12 +108,12 @@ public class Tokens {
     }
 
     public Token build() {
-      Token t;
-      if (value != null) {
-        t = new ValueToken<>(lexeme, value);
-      } else {
-        t = new SpanningToken(lexeme);
-      }
+      Token t = switch (lexeme) {
+        case STRING -> new StringToken((String) value);
+        case NUMBER -> new NumberToken(null);
+        case IDENTIFIER -> new IdentifierToken((String) value);
+        default -> new SpanningToken(lexeme);
+      };
 
       if (span != null) {
         ((SpanningToken) t).withSpan(span);

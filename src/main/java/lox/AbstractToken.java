@@ -13,7 +13,7 @@ public abstract class AbstractToken implements Token {
 
   @Override
   public String toString() {
-    return lexeme + " " + value();
+    return lexeme.toString() + " null";
   }
 
   // Generated ...
