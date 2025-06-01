@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class ScannerTest {
   @Test
-  void scanSingleCharLitteral() {
+  void scanSingleCharLiteral() {
     String input = "{}(),;+-*.=<>!";
     var tokens = new Scanner().scan(input);
     assertThat(tokens.size()).isEqualTo(input.length());
@@ -38,7 +38,7 @@ public class ScannerTest {
   }
 
   @Test
-  void scanTwoCharLitteral() {
+  void scanTwoCharLiteral() {
     String input = "==<=>=!=";
     var tokens = new Scanner().scan(input);
     assertThat(tokens.size()).isEqualTo(4);
@@ -86,8 +86,10 @@ public class ScannerTest {
     String input = "// this is a comment\n+";
     var tokens = new Scanner().scan(input);
     assertThat(tokens.size()).isEqualTo(1);
-    assertThat(tokens.get(0)).isEqualTo(new TokenBuilder(Lexemes.PLUS).build());
-    assertThat(tokens.get(0).span().line()).isEqualTo(2);
+    assertThat(tokens.getFirst()).isEqualTo(new TokenBuilder(Lexemes.PLUS).build());
+    assertThat(tokens.getFirst().span().line()).isEqualTo(2);
+    assertThat(tokens.getFirst().span().sourceSpan().offset()).isEqualTo(input.indexOf('+'));
+    assertThat(tokens.getFirst().span().sourceSpan().length()).isEqualTo(1);
   }
 
   @Test
@@ -135,6 +137,6 @@ public class ScannerTest {
     String input = "+ // comment at end";
     var tokens = new Scanner().scan(input);
     assertThat(tokens.size()).isEqualTo(1);
-    assertThat(tokens.get(0)).isEqualTo(new TokenBuilder(Lexemes.PLUS).build());
+    assertThat(tokens.getFirst()).isEqualTo(new TokenBuilder(Lexemes.PLUS).build());
   }
 }

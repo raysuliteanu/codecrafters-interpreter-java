@@ -1,4 +1,5 @@
 *.jar
+CLAUDE.md
 
 target/
 
@@ -7,3 +8,5 @@ target/
 .project
 .settings/
 .classpath
+
+.sdkmanrc

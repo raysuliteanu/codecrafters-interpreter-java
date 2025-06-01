@@ -110,7 +110,7 @@ public class Tokens {
     public Token build() {
       Token t = switch (lexeme) {
         case STRING -> new StringToken((String) value);
-        case NUMBER -> new NumberToken(null);
+        case NUMBER -> new NumberToken((String) value);
         case IDENTIFIER -> new IdentifierToken((String) value);
         default -> new SpanningToken(lexeme);
       };
