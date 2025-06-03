@@ -32,7 +32,7 @@ public class Main {
       for (var token : tokens) {
         System.out.println(token);
       }
-      System.out.println("EOF  null");
     }
+    System.out.println("EOF  null");
   }
 }
