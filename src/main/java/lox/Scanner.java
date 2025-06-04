@@ -141,7 +141,7 @@ public class Scanner {
             // trace(t.toString());
             yield new TokenBuilder(Lexemes.NUMBER).withValue(sb.toString());
           }
-          case Character ch when Character.isLetter(ch) -> {
+          case Character ch when Character.isLetter(ch) || ch == '_' -> {
             // trace("found start of keyword or identifier");
             StringBuilder sb = new StringBuilder();
             sb.append(ch);

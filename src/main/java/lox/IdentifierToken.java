@@ -16,6 +16,6 @@ public class IdentifierToken extends SpanningToken implements ValueToken<String>
 
   @Override
   public String toString() {
-    return lexeme.name() + " " + value + " " + value;
+    return lexeme.name() + " " + value + " null";
   }
 }
