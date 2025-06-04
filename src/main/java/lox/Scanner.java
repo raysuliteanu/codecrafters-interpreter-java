@@ -104,7 +104,7 @@ public class Scanner {
             StringBuilder sb = new StringBuilder();
             while (chars.hasNext() && !matches(chars.peek(), '"')) {
               Character next = chars.next();
-              trace("adding '" + next + "'");
+              // trace("adding '" + next + "'");
               sb.append(next);
               ++offset;
             }
@@ -125,7 +125,7 @@ public class Scanner {
             sb.append(ch);
             while (chars.hasNext() && matches(chars.peek(), (t) -> Character.isDigit(t) || t == '.')) {
               Character next = chars.next();
-              trace("adding '" + next + "'");
+              // trace("adding '" + next + "'");
               sb.append(next);
               ++offset;
 
@@ -144,7 +144,7 @@ public class Scanner {
             sb.append(ch);
             while (chars.hasNext() && matches(chars.peek(), (t) -> Character.isLetter(t) || t == '_')) {
               Character next = chars.next();
-              trace("adding '" + next + "'");
+              // trace("adding '" + next + "'");
               sb.append(next);
               ++offset;
             }

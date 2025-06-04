@@ -10,6 +10,6 @@ public class UnterminatedStringException extends ParseException {
 
   @Override
   public String toString() {
-    return super.toString() + ": " + msg;
+    return super.toString() + ".";
   }
 }
