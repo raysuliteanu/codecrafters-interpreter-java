@@ -154,7 +154,7 @@ public class Scanner {
             }
 
             var val = sb.toString();
-            if (Lexemes.isKeyword(val.toUpperCase())) {
+            if (Lexemes.isKeyword(val)) {
               trace("found keyword: " + sb);
               yield new TokenBuilder(Lexemes.valueOf(val.toUpperCase()));
             } else {

@@ -60,22 +60,22 @@ public class Tokens {
     }
 
     public static boolean isKeyword(String val) {
-      return val.equalsIgnoreCase(TRUE.name()) ||
-          val.equalsIgnoreCase(Lexemes.FALSE.name()) ||
-          val.equalsIgnoreCase(Lexemes.NIL.name()) ||
-          val.equalsIgnoreCase(Lexemes.AND.name()) ||
-          val.equalsIgnoreCase(Lexemes.OR.name()) ||
-          val.equalsIgnoreCase(Lexemes.CLASS.name()) ||
-          val.equalsIgnoreCase(Lexemes.FOR.name()) ||
-          val.equalsIgnoreCase(Lexemes.FUN.name()) ||
-          val.equalsIgnoreCase(Lexemes.IF.name()) ||
-          val.equalsIgnoreCase(Lexemes.ELSE.name()) ||
-          val.equalsIgnoreCase(Lexemes.RETURN.name()) ||
-          val.equalsIgnoreCase(Lexemes.SUPER.name()) ||
-          val.equalsIgnoreCase(Lexemes.THIS.name()) ||
-          val.equalsIgnoreCase(Lexemes.WHILE.name()) ||
-          val.equalsIgnoreCase(Lexemes.VAR.name()) ||
-          val.equalsIgnoreCase(Lexemes.PRINT.name());
+      return val.equals(TRUE.lexeme()) ||
+          val.equals(Lexemes.FALSE.lexeme()) ||
+          val.equals(Lexemes.NIL.lexeme()) ||
+          val.equals(Lexemes.AND.lexeme()) ||
+          val.equals(Lexemes.OR.lexeme()) ||
+          val.equals(Lexemes.CLASS.lexeme()) ||
+          val.equals(Lexemes.FOR.lexeme()) ||
+          val.equals(Lexemes.FUN.lexeme()) ||
+          val.equals(Lexemes.IF.lexeme()) ||
+          val.equals(Lexemes.ELSE.lexeme()) ||
+          val.equals(Lexemes.RETURN.lexeme()) ||
+          val.equals(Lexemes.SUPER.lexeme()) ||
+          val.equals(Lexemes.THIS.lexeme()) ||
+          val.equals(Lexemes.WHILE.lexeme()) ||
+          val.equals(Lexemes.VAR.lexeme()) ||
+          val.equals(Lexemes.PRINT.lexeme());
     }
 
     public String toString() {
@@ -83,7 +83,6 @@ public class Tokens {
     }
   }
 
-  // TODO: make Object for value be a generic T
   public static class TokenBuilder {
     private Lexemes lexeme;
     private Object value;
