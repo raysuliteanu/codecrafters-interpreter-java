@@ -55,7 +55,7 @@ public class Scanner {
           case ';' -> new TokenBuilder(Lexemes.SEMICOLON);
           case '*' -> new TokenBuilder(Lexemes.STAR);
           case '<' -> {
-            var res = thisOrThat(chars, '=', Lexemes.LESS_EQ, Lexemes.LESS, offset);
+            var res = thisOrThat(chars, '=', Lexemes.LESS_EQUAL, Lexemes.LESS, offset);
 
             var tokenBuilder = (TokenBuilder) res.get(0);
             offset = (long) res.get(1);
@@ -63,7 +63,7 @@ public class Scanner {
             yield tokenBuilder;
           }
           case '>' -> {
-            var res = thisOrThat(chars, '=', Lexemes.GREATER_EQ, Lexemes.GREATER, offset);
+            var res = thisOrThat(chars, '=', Lexemes.GREATER_EQUAL, Lexemes.GREATER, offset);
 
             var tokenBuilder = (TokenBuilder) res.get(0);
             offset = (long) res.get(1);
@@ -71,7 +71,7 @@ public class Scanner {
             yield tokenBuilder;
           }
           case '!' -> {
-            var res = thisOrThat(chars, '=', Lexemes.BANG_EQ, Lexemes.BANG, offset);
+            var res = thisOrThat(chars, '=', Lexemes.BANG_EQUAL, Lexemes.BANG, offset);
 
             var tokenBuilder = (TokenBuilder) res.get(0);
             offset = (long) res.get(1);
@@ -79,7 +79,7 @@ public class Scanner {
             yield tokenBuilder;
           }
           case '=' -> {
-            var res = thisOrThat(chars, '=', Lexemes.EQ_EQ, Lexemes.EQ, offset);
+            var res = thisOrThat(chars, '=', Lexemes.EQUAL_EQUAL, Lexemes.EQUAL, offset);
 
             var tokenBuilder = (TokenBuilder) res.get(0);
             offset = (long) res.get(1);

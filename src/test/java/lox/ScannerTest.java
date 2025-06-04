@@ -28,7 +28,7 @@ public class ScannerTest {
         new TokenBuilder(Lexemes.MINUS).build(),
         new TokenBuilder(Lexemes.STAR).build(),
         new TokenBuilder(Lexemes.DOT).build(),
-        new TokenBuilder(Lexemes.EQ).build(),
+        new TokenBuilder(Lexemes.EQUAL).build(),
         new TokenBuilder(Lexemes.LESS).build(),
         new TokenBuilder(Lexemes.GREATER).build(),
         new TokenBuilder(Lexemes.BANG).build());
@@ -49,10 +49,10 @@ public class ScannerTest {
     var tokens = result.success();
     assertThat(tokens.size()).isEqualTo(4);
     assertThat(tokens).containsExactly(
-        new TokenBuilder(Lexemes.EQ_EQ).build(),
-        new TokenBuilder(Lexemes.LESS_EQ).build(),
-        new TokenBuilder(Lexemes.GREATER_EQ).build(),
-        new TokenBuilder(Lexemes.BANG_EQ).build());
+        new TokenBuilder(Lexemes.EQUAL_EQUAL).build(),
+        new TokenBuilder(Lexemes.LESS_EQUAL).build(),
+        new TokenBuilder(Lexemes.GREATER_EQUAL).build(),
+        new TokenBuilder(Lexemes.BANG_EQUAL).build());
 
     long expectedOffset = 0;
     for (Token t : tokens) {
@@ -140,14 +140,14 @@ public class ScannerTest {
     var tokens = result.success();
     assertThat(tokens.size()).isEqualTo(8);
     assertThat(tokens).containsExactly(
-        new TokenBuilder(Lexemes.BANG_EQ).build(),
-        new TokenBuilder(Lexemes.EQ_EQ).build(),
-        new TokenBuilder(Lexemes.LESS_EQ).build(),
-        new TokenBuilder(Lexemes.GREATER_EQ).build(),
+        new TokenBuilder(Lexemes.BANG_EQUAL).build(),
+        new TokenBuilder(Lexemes.EQUAL_EQUAL).build(),
+        new TokenBuilder(Lexemes.LESS_EQUAL).build(),
+        new TokenBuilder(Lexemes.GREATER_EQUAL).build(),
         new TokenBuilder(Lexemes.LESS).build(),
         new TokenBuilder(Lexemes.GREATER).build(),
         new TokenBuilder(Lexemes.BANG).build(),
-        new TokenBuilder(Lexemes.EQ).build());
+        new TokenBuilder(Lexemes.EQUAL).build());
   }
 
   @Test

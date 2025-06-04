@@ -14,13 +14,13 @@ public class Tokens {
     COMMA(","),
     SLASH("/"),
     LESS("<"),
-    LESS_EQ("<="),
+    LESS_EQUAL("<="),
     GREATER(">"),
-    GREATER_EQ(">="),
+    GREATER_EQUAL(">="),
     BANG("!"),
-    BANG_EQ("!="),
-    EQ("="),
-    EQ_EQ("=="),
+    BANG_EQUAL("!="),
+    EQUAL("="),
+    EQUAL_EQUAL("=="),
 
     // value tokens
     NUMBER,
