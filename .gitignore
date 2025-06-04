@@ -1,5 +1,6 @@
 *.jar
 CLAUDE.md
+*.lox
 
 target/
 
