@@ -1,20 +1,17 @@
-
 package lox;
+
+import java.util.Objects;
 
 public class ParseException extends LoxException {
   private Span span;
 
-  public ParseException(String message) {
-    super(message);
-  }
-
   public ParseException(Span span) {
-    super();
-    this.span = span;
+    this(null, span);
   }
 
   public ParseException(String message, Span span) {
     super(message);
+    Objects.nonNull(span);
     this.span = span;
   }
 
@@ -24,6 +21,6 @@ public class ParseException extends LoxException {
 
   @Override
   public String toString() {
-    return "[line " + (getSpan() != null ? getSpan().line() : "?") + "]: " + super.toString();
+    return "[line " + getSpan().line() + "] Error: " + super.toString();
   }
 }

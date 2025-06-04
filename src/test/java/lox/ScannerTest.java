@@ -1,5 +1,7 @@
 package lox;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import lox.Tokens.Lexemes;
@@ -11,7 +13,9 @@ public class ScannerTest {
   @Test
   void scanSingleCharLiteral() {
     String input = "{}(),;+-*.=<>!";
-    var tokens = new Scanner().scan(input);
+    Result<List<Token>, List<Throwable>> result = new Scanner().scan(input);
+    assertThat(result.isOk()).isTrue();
+    var tokens = result.success();
     assertThat(tokens.size()).isEqualTo(input.length());
     assertThat(tokens).containsExactly(
         new TokenBuilder(Lexemes.LEFT_BRACE).build(),
@@ -40,7 +44,9 @@ public class ScannerTest {
   @Test
   void scanTwoCharLiteral() {
     String input = "==<=>=!=";
-    var tokens = new Scanner().scan(input);
+    Result<List<Token>, List<Throwable>> result = new Scanner().scan(input);
+    assertThat(result.isOk()).isTrue();
+    var tokens = result.success();
     assertThat(tokens.size()).isEqualTo(4);
     assertThat(tokens).containsExactly(
         new TokenBuilder(Lexemes.EQ_EQ).build(),
@@ -62,7 +68,9 @@ public class ScannerTest {
   @Test
   void scanWithWhitespace() {
     String input = "{ } ( )";
-    var tokens = new Scanner().scan(input);
+    Result<List<Token>, List<Throwable>> result = new Scanner().scan(input);
+    assertThat(result.isOk()).isTrue();
+    var tokens = result.success();
     assertThat(tokens.size()).isEqualTo(4);
     assertThat(tokens).containsExactly(
         new TokenBuilder(Lexemes.LEFT_BRACE).build(),
@@ -74,7 +82,9 @@ public class ScannerTest {
   @Test
   void scanWithNewlines() {
     String input = "{\n}\n(";
-    var tokens = new Scanner().scan(input);
+    Result<List<Token>, List<Throwable>> result = new Scanner().scan(input);
+    assertThat(result.isOk()).isTrue();
+    var tokens = result.success();
     assertThat(tokens.size()).isEqualTo(3);
     assertThat(tokens.get(0).span().line()).isEqualTo(1);
     assertThat(tokens.get(1).span().line()).isEqualTo(2);
@@ -84,7 +94,9 @@ public class ScannerTest {
   @Test
   void scanLineComments() {
     String input = "// this is a comment\n+";
-    var tokens = new Scanner().scan(input);
+    Result<List<Token>, List<Throwable>> result = new Scanner().scan(input);
+    assertThat(result.isOk()).isTrue();
+    var tokens = result.success();
     assertThat(tokens.size()).isEqualTo(1);
     assertThat(tokens.getFirst()).isEqualTo(new TokenBuilder(Lexemes.PLUS).build());
     assertThat(tokens.getFirst().span().line()).isEqualTo(2);
@@ -95,7 +107,9 @@ public class ScannerTest {
   @Test
   void scanSlashWithoutComment() {
     String input = "/ +";
-    var tokens = new Scanner().scan(input);
+    Result<List<Token>, List<Throwable>> result = new Scanner().scan(input);
+    assertThat(result.isOk()).isTrue();
+    var tokens = result.success();
     assertThat(tokens.size()).isEqualTo(2);
     assertThat(tokens).containsExactly(
         new TokenBuilder(Lexemes.SLASH).build(),
@@ -105,21 +119,25 @@ public class ScannerTest {
   @Test
   void scanEmptyInput() {
     String input = "";
-    var tokens = new Scanner().scan(input);
+    Result<List<Token>, List<Throwable>> result = new Scanner().scan(input);
+    var tokens = result.success();
     assertThat(tokens).isEmpty();
   }
 
   @Test
   void scanOnlyWhitespace() {
     String input = "   \t\r\n  ";
-    var tokens = new Scanner().scan(input);
+    Result<List<Token>, List<Throwable>> result = new Scanner().scan(input);
+    var tokens = result.success();
     assertThat(tokens).isEmpty();
   }
 
   @Test
   void scanMixedOperators() {
     String input = "!= == <= >= < > ! =";
-    var tokens = new Scanner().scan(input);
+    Result<List<Token>, List<Throwable>> result = new Scanner().scan(input);
+    assertThat(result.isOk()).isTrue();
+    var tokens = result.success();
     assertThat(tokens.size()).isEqualTo(8);
     assertThat(tokens).containsExactly(
         new TokenBuilder(Lexemes.BANG_EQ).build(),
@@ -135,7 +153,9 @@ public class ScannerTest {
   @Test
   void scanCommentAtEndOfFile() {
     String input = "+ // comment at end";
-    var tokens = new Scanner().scan(input);
+    Result<List<Token>, List<Throwable>> result = new Scanner().scan(input);
+    assertThat(result.isOk()).isTrue();
+    var tokens = result.success();
     assertThat(tokens.size()).isEqualTo(1);
     assertThat(tokens.getFirst()).isEqualTo(new TokenBuilder(Lexemes.PLUS).build());
   }

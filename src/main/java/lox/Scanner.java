@@ -4,13 +4,14 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 
-import static lox.Tokens.TokenBuilder;
-import static lox.Util.matches;
-import static lox.LogUtil.log;
+import lox.Scanner.DefaultPeekableIterator;
+import lox.Scanner.PeekableIterator;
+import lox.Tokens.Lexemes;
+import lox.Tokens.TokenBuilder;
+
 import static lox.LogUtil.trace;
-import static lox.Tokens.Lexemes;
+import static lox.Util.matches;
 
 public class Scanner {
   Tuple thisOrThat(final PeekableIterator chars, final Character match, final Lexemes combo, final Lexemes single,
@@ -23,16 +24,19 @@ public class Scanner {
     }
   }
 
-  public List<Token> scan(CharSequence source) {
+  public Result<List<Token>, List<Throwable>> scan(CharSequence source) {
     final var tokens = new ArrayList<Token>();
+    final var exceptions = new ArrayList<Throwable>();
     final var chars = new DefaultPeekableIterator(source);
-    try {
-      long offset = 0;
-      long line = 1;
-      for (var c : chars) {
-        long tokenStart = offset++;
+    long offset = 0;
+    long line = 1;
 
-        TokenBuilder token = switch (c) {
+    for (var c : chars) {
+      TokenBuilder token = null;
+      long tokenStart = offset++;
+
+      try {
+        token = switch (c) {
           case ' ', '\t', '\r' -> {
             yield null;
           }
@@ -155,19 +159,21 @@ public class Scanner {
             }
 
           }
-          default -> throw new UnexpectedTokenException(c, Span.of(line, offset, 1));
+          default -> {
+            throw new UnexpectedCharacterException(c, Span.of(line, offset, 1));
+          }
         };
-
-        if (token != null) {
-          token.withSpan(line, tokenStart, offset - tokenStart).build();
-          tokens.add(token.build());
-        }
+      } catch (ParseException e) {
+        exceptions.add(e);
       }
-    } catch (ParseException e) {
-      log(e.toString());
+
+      if (token != null) {
+        token.withSpan(line, tokenStart, offset - tokenStart).build();
+        tokens.add(token.build());
+      }
     }
 
-    return tokens;
+    return new Result<>(tokens, exceptions);
   }
 
   public static interface PeekableIterator extends Iterator<Character>, Iterable<Character> {

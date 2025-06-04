@@ -7,9 +7,18 @@ public abstract class LogUtil {
     System.out.flush();
   }
 
+  public static void log(Throwable t) {
+    System.err.println(t);
+    System.err.flush();
+  }
+
   public static void trace(String msg) {
     System.err.println(msg);
     System.err.flush();
   }
 
+  public static void trace(Throwable t) {
+    System.err.println(t);
+    System.err.flush();
+  }
 }

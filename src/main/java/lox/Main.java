@@ -3,6 +3,7 @@ package lox;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 public class Main {
   public static void main(String[] args) {
@@ -27,12 +28,25 @@ public class Main {
       System.exit(1);
     }
 
+    int rc = 0;
     if (fileContents.length() > 0) {
-      var tokens = new Scanner().scan(fileContents);
-      for (var token : tokens) {
-        System.out.println(token);
+      Result<List<Token>, List<Throwable>> result = new Scanner().scan(fileContents);
+
+      if (result.hasErr()) {
+        rc = 65;
+        for (var error : result.error()) {
+          System.err.println(error);
+        }
+      }
+
+      if (result.isOk()) {
+        for (var token : result.success()) {
+          System.out.println(token);
+        }
       }
     }
+
     System.out.println("EOF  null");
+    System.exit(rc);
   }
 }

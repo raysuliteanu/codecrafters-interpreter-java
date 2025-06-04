@@ -3,10 +3,6 @@ package lox;
 public class UnterminatedStringException extends ParseException {
   String msg;
 
-  public UnterminatedStringException(String msg) {
-    this(msg, null);
-  }
-
   public UnterminatedStringException(String msg, Span span) {
     super("Unterminated string", span);
     this.msg = msg;

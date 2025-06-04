@@ -1,13 +1,11 @@
 
 package lox;
 
-public class EofException extends ParseException {
-  public EofException() {
-    super("Unexpected EOF");
-  }
+import java.util.Objects;
 
+public class EofException extends ParseException {
   public EofException(Span span) {
-    super(span);
+    this("Unexpected EOF", span);
   }
 
   public EofException(String message, Span span) {
