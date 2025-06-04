@@ -5,8 +5,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
-import lox.Scanner.DefaultPeekableIterator;
-import lox.Scanner.PeekableIterator;
 import lox.Tokens.Lexemes;
 import lox.Tokens.TokenBuilder;
 
@@ -24,7 +22,7 @@ public class Scanner {
     }
   }
 
-  public Result<List<Token>, List<Throwable>> scan(CharSequence source) {
+  Result<List<Token>, List<Throwable>> scan(CharSequence source) {
     final var tokens = new ArrayList<Token>();
     final var exceptions = new ArrayList<Throwable>();
     final var chars = new DefaultPeekableIterator(source);
@@ -37,9 +35,7 @@ public class Scanner {
 
       try {
         token = switch (c) {
-          case ' ', '\t', '\r' -> {
-            yield null;
-          }
+          case ' ', '\t', '\r' -> null;
           case '\n' -> {
             ++line;
             yield null;
@@ -120,29 +116,37 @@ public class Scanner {
             yield new TokenBuilder(Lexemes.STRING).withValue(sb.toString());
           }
           case Character ch when Character.isDigit(ch) -> {
-            trace("found start of number: " + ch);
+            // trace("found start of number: " + ch);
+            // trace(chars.toString());
+
             StringBuilder sb = new StringBuilder();
             sb.append(ch);
+
             while (chars.hasNext() && matches(chars.peek(), (t) -> Character.isDigit(t) || t == '.')) {
-              Character next = chars.next();
-              // trace("adding '" + next + "'");
-              sb.append(next);
+              Character cur = chars.next();
+              sb.append(cur);
+              // trace("sb: " + sb);
               ++offset;
 
-              if (matches(chars.peek(), '.')) {
+              // trace(chars.toString());
+
+              if (cur == '.' && !matches(chars.peek(), Character::isDigit)) {
                 // two '.' in a row e.g. 1..foo; so the number is '1.' and the 2nd '.' is a
                 // separate token
+                // trace("breaking at: " + chars);
                 break;
               }
             }
 
+            // trace(t.toString());
             yield new TokenBuilder(Lexemes.NUMBER).withValue(sb.toString());
           }
           case Character ch when Character.isLetter(ch) -> {
-            trace("found start of keyword or identifier");
+            // trace("found start of keyword or identifier");
             StringBuilder sb = new StringBuilder();
             sb.append(ch);
-            while (chars.hasNext() && matches(chars.peek(), (t) -> Character.isLetter(t) || t == '_')) {
+            while (chars.hasNext()
+                && matches(chars.peek(), (t) -> Character.isLetter(t) || Character.isDigit(t) || t == '_')) {
               Character next = chars.next();
               // trace("adding '" + next + "'");
               sb.append(next);
@@ -159,9 +163,7 @@ public class Scanner {
             }
 
           }
-          default -> {
-            throw new UnexpectedCharacterException(c, Span.of(line, offset, 1));
-          }
+          default -> throw new UnexpectedCharacterException(c, Span.of(line, offset, 1));
         };
       } catch (ParseException e) {
         exceptions.add(e);
@@ -176,14 +178,13 @@ public class Scanner {
     return new Result<>(tokens, exceptions);
   }
 
-  public static interface PeekableIterator extends Iterator<Character>, Iterable<Character> {
+  public interface PeekableIterator extends Iterator<Character>, Iterable<Character> {
     Optional<Character> peek();
   }
 
   public static class DefaultPeekableIterator implements PeekableIterator {
     private final CharSequence in;
     private int offset;
-    private int peekOffset;
 
     public DefaultPeekableIterator(CharSequence in) {
       this.in = in;
@@ -201,16 +202,18 @@ public class Scanner {
 
     @Override
     public Character next() {
-      peekOffset = offset;
-      Character c = in.charAt(offset);
-      ++offset;
-      return c;
+      return in.charAt(offset++);
     }
 
     @Override
     public Optional<Character> peek() {
-      ++peekOffset;
-      return Optional.ofNullable(peekOffset < in.length() ? in.charAt(peekOffset) : null);
+      return Optional.ofNullable(offset < in.length() ? in.charAt(offset) : null);
     }
+
+    @Override
+    public String toString() {
+      return "PeekableIterator[next() = " + ((offset < in.length()) ? in.charAt(offset) : "null") + "]";
+    }
+
   }
 }

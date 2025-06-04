@@ -12,7 +12,7 @@ public class NumberToken extends SpanningToken implements ValueToken<Number> {
 
     String tmp = original;
     if (original.endsWith(".")) {
-      tmp = original.substring(0, original.lastIndexOf("."));
+      tmp = original + "0";
     }
     this.value = Double.parseDouble(tmp);
   }
