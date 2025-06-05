@@ -1,6 +1,6 @@
-package lox;
+package lox.util;
 
-interface Tuple {
+public interface Tuple {
   Object get(int index);
 
   int arity();

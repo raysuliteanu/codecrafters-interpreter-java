@@ -1,4 +1,5 @@
-package lox;
+package lox.util;
+
 
 public abstract class Tuples {
   public static Tuple of(Object one, Object two) {

@@ -1,4 +1,4 @@
-package lox;
+package lox.util;
 
 import java.util.Optional;
 import java.util.function.Predicate;

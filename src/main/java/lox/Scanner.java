@@ -7,9 +7,11 @@ import java.util.Optional;
 
 import lox.Tokens.Lexemes;
 import lox.Tokens.TokenBuilder;
+import lox.util.Tuple;
+import lox.util.Tuples;
 
-import static lox.LogUtil.trace;
-import static lox.Util.matches;
+import static lox.util.LogUtil.trace;
+import static lox.util.Util.matches;
 
 public class Scanner {
   Tuple thisOrThat(final PeekableIterator chars, final Character match, final Lexemes combo, final Lexemes single,
