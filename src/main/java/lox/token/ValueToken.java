@@ -1,5 +1,5 @@
-package lox;
+package lox.token;
 
 interface ValueToken<T> extends Token {
-  T value();
+    T value();
 }
