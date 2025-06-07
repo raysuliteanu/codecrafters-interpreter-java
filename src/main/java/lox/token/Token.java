@@ -1,9 +1,10 @@
 package lox.token;
 
 import lox.Span;
+import lox.token.Tokens.Lexemes;
 
 public interface Token {
-    String lexeme();
+  Lexemes lexeme();
 
-    Span span();
+  Span span();
 }

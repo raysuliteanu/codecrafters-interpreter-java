@@ -4,20 +4,20 @@ import static lox.util.LogUtil.trace;
 import static lox.util.Util.matches;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import lox.Result;
 import lox.Span;
 import lox.token.Tokens.Lexemes;
 import lox.token.Tokens.TokenBuilder;
+import lox.util.CharSequencePeekableIterator;
+import lox.util.PeekableIterator;
 import lox.util.Tuple;
 import lox.util.Tuples;
 
 public class Scanner {
 
     Tuple thisOrThat(
-        final PeekableIterator chars,
+        final PeekableIterator<Character> chars,
         final Character match,
         final Lexemes combo,
         final Lexemes single,
@@ -34,7 +34,7 @@ public class Scanner {
     public Result<List<Token>, List<Throwable>> scan(CharSequence source) {
         final var tokens = new ArrayList<Token>();
         final var exceptions = new ArrayList<Throwable>();
-        final var chars = new DefaultPeekableIterator(source);
+        final var chars = new CharSequencePeekableIterator(source);
         long offset = 0;
         long line = 1;
 
@@ -245,49 +245,4 @@ public class Scanner {
         return new Result<>(tokens, exceptions);
     }
 
-    public interface PeekableIterator
-        extends Iterator<Character>, Iterable<Character> {
-        Optional<Character> peek();
-    }
-
-    public static class DefaultPeekableIterator implements PeekableIterator {
-
-        private final CharSequence in;
-        private int offset;
-
-        public DefaultPeekableIterator(CharSequence in) {
-            this.in = in;
-        }
-
-        @Override
-        public Iterator<Character> iterator() {
-            return this;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return offset < in.length();
-        }
-
-        @Override
-        public Character next() {
-            return in.charAt(offset++);
-        }
-
-        @Override
-        public Optional<Character> peek() {
-            return Optional.ofNullable(
-                offset < in.length() ? in.charAt(offset) : null
-            );
-        }
-
-        @Override
-        public String toString() {
-            return (
-                "PeekableIterator[next() = " +
-                ((offset < in.length()) ? in.charAt(offset) : "null") +
-                "]"
-            );
-        }
-    }
 }
