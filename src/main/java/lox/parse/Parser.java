@@ -4,13 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import lox.LoxException;
 import lox.NotImplementedException;
 import lox.Result;
 import lox.token.Scanner;
 import lox.token.Token;
 import lox.token.Tokens.Lexemes;
 import lox.util.IterablePeekableIterator;
+import lox.util.LogUtil;
 import lox.util.PeekableIterator;
+import lox.util.UnexpectedEofException;
 
 public class Parser {
 
@@ -23,42 +26,48 @@ public class Parser {
   }
 
   public Result<List<Ast>, List<Throwable>> parse() {
-    var scanResult = scanner.scan(source);
+    final var scanResult = scanner.scan(source);
 
     // TODO: handle possible errors from scan()
 
-    var ast = new ArrayList<Ast>();
-    var errors = new ArrayList<Throwable>();
+    final var ast = new ArrayList<Ast>();
+    final var errors = new ArrayList<Throwable>();
 
     if (scanResult.isOk()) {
-      var tokens = scanResult.success();
+      final var tokens = scanResult.success();
 
-      var it = new IterablePeekableIterator<Token>(tokens);
+      final var it = new IterablePeekableIterator<Token>(tokens);
 
-      program(it);
+      return program(it, errors);
     }
 
     return new Result<>(ast, errors);
   }
 
-  private List<Ast> program(PeekableIterator<Token> tokens) {
-    var nodes = new ArrayList<Ast>();
+  private Result<List<Ast>, List<Throwable>> program(final PeekableIterator<Token> tokens, List<Throwable> errors) {
+    final var nodes = new ArrayList<Ast>();
     while (tokens.hasNext()) {
-      var token = tokens.peek().get();
-      var ast = switch (token.lexeme()) {
-        case CLASS -> throw new NotImplementedException(token.lexeme().name());
-        case FUN -> throw new NotImplementedException(token.lexeme().name());
-        case VAR -> throw new NotImplementedException(token.lexeme().name());
-        default -> statement(tokens);
-      };
-      nodes.add(ast);
+      try {
+        final var token = tokens.peek().get();
+        LogUtil.trace("next token: " + token);
+        final var ast = switch (token.lexeme()) {
+          case CLASS -> throw new NotImplementedException(token.lexeme().name());
+          case FUN -> throw new NotImplementedException(token.lexeme().name());
+          case VAR -> throw new NotImplementedException(token.lexeme().name());
+          default -> statement(tokens);
+        };
+        nodes.add(ast);
+      } catch (LoxException e) {
+        errors.add(e);
+      }
     }
 
-    return nodes;
+    return new Result<>(nodes, errors);
   }
 
-  private Ast statement(PeekableIterator<Token> tokens) {
-    var ast = switch (tokens.peek().get().lexeme()) {
+  private Ast statement(final PeekableIterator<Token> tokens) {
+    LogUtil.trace("stmt");
+    final var ast = switch (tokens.peek().get().lexeme()) {
       case LEFT_BRACE -> block(tokens);
       case WHILE -> whileStmt(tokens);
       case RETURN -> returnStmt(tokens);
@@ -71,124 +80,181 @@ public class Parser {
     return ast;
   }
 
-  private Ast expressionStatement(PeekableIterator<Token> tokens) {
-    var ast = expression(tokens);
+  private Ast expressionStatement(final PeekableIterator<Token> tokens) {
+    LogUtil.trace("expression stmt");
+    final var ast = expression(tokens);
 
     // check for an eat semicolon, or else error
     tokens.nextIf((t) -> t.lexeme() == Lexemes.SEMICOLON)
-        .orElseThrow(() -> new MissingTokenException(
-            Lexemes.SEMICOLON.lexeme(),
-            tokens.peek().get().lexeme().lexeme()));
+        .orElseThrow(() -> {
+          if (tokens.hasNext()) {
+            return new MissingTokenException(
+                Lexemes.SEMICOLON.value(),
+                tokens.peek().get().lexeme().value());
+          } else {
+            return new UnexpectedEofException();
+          }
+        });
 
     return ast;
   }
 
-  private Expr expression(PeekableIterator<Token> tokens) {
+  private Expr expression(final PeekableIterator<Token> tokens) {
+    LogUtil.trace("expression");
     return equality(tokens);
   }
 
-  private Expr equality(PeekableIterator<Token> tokens) {
+  private Expr equality(final PeekableIterator<Token> tokens) {
+    LogUtil.trace("equality");
     var ast = comparison(tokens);
 
-    while (tokens.peek().isPresent()) {
-      var node = tokens.nextIf((t) -> t.lexeme() == Lexemes.BANG_EQUAL || t.lexeme() == Lexemes.EQUAL_EQUAL);
+    while (tokens.hasNext()) {
+      final var node = tokens.nextIf((t) -> t.lexeme() == Lexemes.BANG_EQUAL || t.lexeme() == Lexemes.EQUAL_EQUAL);
       if (node.isPresent()) {
-        var op = node.get();
-        var rhs = comparison(tokens);
+        final var op = node.get();
+        final var rhs = comparison(tokens);
         ast = new Expr.Binary(op, ast, rhs);
+      } else {
+        break;
       }
     }
 
     return ast;
   }
 
-  private Expr comparison(PeekableIterator<Token> tokens) {
+  private Expr comparison(final PeekableIterator<Token> tokens) {
+    LogUtil.trace("comparison");
     var ast = term(tokens);
 
-    while (tokens.peek().isPresent()) {
-      var node = tokens.nextIf((t) -> t.lexeme() == Lexemes.GREATER ||
+    while (tokens.hasNext()) {
+      final var node = tokens.nextIf((t) -> t.lexeme() == Lexemes.GREATER ||
           t.lexeme() == Lexemes.GREATER_EQUAL ||
           t.lexeme() == Lexemes.LESS_EQUAL ||
           t.lexeme() == Lexemes.LESS);
       if (node.isPresent()) {
-        var op = node.get();
-        var rhs = term(tokens);
+        final var op = node.get();
+        final var rhs = term(tokens);
         ast = new Expr.Binary(op, ast, rhs);
+      } else {
+        break;
       }
     }
     return ast;
   }
 
-  private Expr term(PeekableIterator<Token> tokens) {
+  private Expr term(final PeekableIterator<Token> tokens) {
+    LogUtil.trace("term");
+
     var ast = factor(tokens);
 
-    while (tokens.peek().isPresent()) {
-      var node = tokens.nextIf((t) -> t.lexeme() == Lexemes.PLUS || t.lexeme() == Lexemes.MINUS);
+    while (tokens.hasNext()) {
+      final var node = tokens.nextIf((t) -> t.lexeme() == Lexemes.PLUS || t.lexeme() == Lexemes.MINUS);
 
       if (node.isPresent()) {
-        var op = node.get();
-        var rhs = factor(tokens);
+        final var op = node.get();
+        final var rhs = factor(tokens);
         ast = new Expr.Binary(op, ast, rhs);
+      } else {
+        break;
       }
     }
 
     return ast;
   }
 
-  private Expr factor(PeekableIterator<Token> tokens) {
+  private Expr factor(final PeekableIterator<Token> tokens) {
+    LogUtil.trace("factor");
+
     var ast = unary(tokens);
 
-    while (tokens.peek().isPresent()) {
-      var node = tokens.nextIf((t) -> t.lexeme() == Lexemes.STAR || t.lexeme() == Lexemes.SLASH);
+    while (tokens.hasNext()) {
+      final var node = tokens.nextIf((t) -> t.lexeme() == Lexemes.STAR || t.lexeme() == Lexemes.SLASH);
 
       if (node.isPresent()) {
-        var op = node.get();
-        var rhs = unary(tokens);
+        final var op = node.get();
+        final var rhs = unary(tokens);
         ast = new Expr.Binary(op, ast, rhs);
+      } else {
+        break;
       }
     }
 
     return ast;
   }
 
-  private Expr unary(PeekableIterator<Token> tokens) {
-    Expr ast = null;
-    var token = tokens.peek().get();
-    if (token.lexeme() == Lexemes.BANG || token.lexeme() == Lexemes.MINUS) {
-      token = tokens.next();
-      Expr expr = primary(tokens);
-      ast = new Expr.Unary(token, expr);
-    } else {
-      ast = primary(tokens);
+  private Expr unary(final PeekableIterator<Token> tokens) {
+    LogUtil.trace("unary");
+    var e = switch (tokens.nextIf((t) -> t.lexeme() == Lexemes.BANG || t.lexeme() == Lexemes.MINUS)) {
+      case Optional<Token> o when o.isPresent() -> {
+        final var op = o.get();
+        final Expr expr = primary(tokens);
+        yield new Expr.Unary(op, expr);
+      }
+      default -> {
+        var p = primary(tokens);
+        yield p;
+      }
+    };
+
+    return e;
+  }
+
+  private Expr primary(final PeekableIterator<Token> tokens) {
+    LogUtil.trace("primary");
+    var token = tokens
+        .nextIf((t) -> t.lexeme() == Lexemes.TRUE || t.lexeme() == Lexemes.FALSE || t.lexeme() == Lexemes.NIL);
+
+    if (token.isPresent()) {
+      return new Expr.Terminal(token.get());
     }
-    return ast;
+
+    token = tokens.nextIf((t) -> t.lexeme() == Lexemes.LEFT_PAREN);
+    if (token.isPresent()) {
+      // start of group expression i.e. '(' expr ')'
+      LogUtil.trace("start group expr");
+      var expr = expression(tokens);
+      token = tokens.nextIf((t) -> t.lexeme() == Lexemes.RIGHT_PAREN);
+      if (token.isPresent()) {
+        LogUtil.trace("end group expr");
+        return new Expr.Group(expr);
+      } else if (tokens.hasNext()) {
+        throw new MissingTokenException(")", tokens.peek().get().lexeme().value());
+      } else {
+        throw new UnexpectedEofException();
+      }
+    }
+
+    token = tokens.nextIf(
+        (t) -> t.lexeme() == Lexemes.NUMBER || t.lexeme() == Lexemes.STRING || t.lexeme() == Lexemes.IDENTIFIER);
+    if (token.isPresent()) {
+      return new Expr.Terminal(token.get());
+    }
+
+    // TODO: make exception type
+    throw new RuntimeException("unexpected token '" + tokens.peek().get().lexeme().value() + "'");
   }
 
-  private Expr primary(PeekableIterator<Token> tokens) {
-    return new Expr.Terminal(null);
-  }
-
-  private Ast block(PeekableIterator<Token> tokens) {
+  private Ast block(final PeekableIterator<Token> tokens) {
     throw new NotImplementedException("block statement");
   }
 
-  private Ast whileStmt(PeekableIterator<Token> tokens) {
+  private Ast whileStmt(final PeekableIterator<Token> tokens) {
     throw new NotImplementedException("while statement");
   }
 
-  private Ast returnStmt(PeekableIterator<Token> tokens) {
+  private Ast returnStmt(final PeekableIterator<Token> tokens) {
     throw new NotImplementedException("return statement");
   }
 
-  private Ast forStmt(PeekableIterator<Token> tokens) {
+  private Ast forStmt(final PeekableIterator<Token> tokens) {
     throw new NotImplementedException("for statement");
   }
 
-  private Ast ifStmt(PeekableIterator<Token> tokens) {
+  private Ast ifStmt(final PeekableIterator<Token> tokens) {
     throw new NotImplementedException("if statement");
   }
 
-  private Ast printStmt(PeekableIterator<Token> tokens) {
+  private Ast printStmt(final PeekableIterator<Token> tokens) {
     throw new NotImplementedException("print statement");
   }
 

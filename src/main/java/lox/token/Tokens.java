@@ -50,56 +50,56 @@ public class Tokens {
 
     public final String lexeme;
 
-    private Lexemes(String lexeme) {
+    Lexemes(String lexeme) {
       this.lexeme = lexeme;
     }
 
-    private Lexemes() {
+    Lexemes() {
       this.lexeme = null;
     }
 
-    public String lexeme() {
+    public String value() {
       return lexeme;
     }
 
     public static boolean isStmt(String val) {
-      return (val.equals(IF.lexeme()) ||
-          val.equals(Lexemes.FOR.lexeme()) ||
-          val.equals(Lexemes.WHILE.lexeme()) ||
-          val.equals(Lexemes.PRINT.lexeme()) ||
-          val.equals(Lexemes.RETURN.lexeme()) ||
+      return (val.equals(IF.value()) ||
+          val.equals(Lexemes.FOR.value()) ||
+          val.equals(Lexemes.WHILE.value()) ||
+          val.equals(Lexemes.PRINT.value()) ||
+          val.equals(Lexemes.RETURN.value()) ||
           // left brace '{' is "start of statement(s)"
-          val.equals(Lexemes.LEFT_BRACE.lexeme()));
+          val.equals(Lexemes.LEFT_BRACE.value()));
 
     }
 
     public static boolean isKeyword(String val) {
-      return (val.equals(TRUE.lexeme()) ||
-          val.equals(Lexemes.FALSE.lexeme()) ||
-          val.equals(Lexemes.NIL.lexeme()) ||
-          val.equals(Lexemes.AND.lexeme()) ||
-          val.equals(Lexemes.OR.lexeme()) ||
-          val.equals(Lexemes.CLASS.lexeme()) ||
-          val.equals(Lexemes.FOR.lexeme()) ||
-          val.equals(Lexemes.FUN.lexeme()) ||
-          val.equals(Lexemes.IF.lexeme()) ||
-          val.equals(Lexemes.ELSE.lexeme()) ||
-          val.equals(Lexemes.RETURN.lexeme()) ||
-          val.equals(Lexemes.SUPER.lexeme()) ||
-          val.equals(Lexemes.THIS.lexeme()) ||
-          val.equals(Lexemes.WHILE.lexeme()) ||
-          val.equals(Lexemes.VAR.lexeme()) ||
-          val.equals(Lexemes.PRINT.lexeme()));
+      return (val.equals(TRUE.value()) ||
+          val.equals(Lexemes.FALSE.value()) ||
+          val.equals(Lexemes.NIL.value()) ||
+          val.equals(Lexemes.AND.value()) ||
+          val.equals(Lexemes.OR.value()) ||
+          val.equals(Lexemes.CLASS.value()) ||
+          val.equals(Lexemes.FOR.value()) ||
+          val.equals(Lexemes.FUN.value()) ||
+          val.equals(Lexemes.IF.value()) ||
+          val.equals(Lexemes.ELSE.value()) ||
+          val.equals(Lexemes.RETURN.value()) ||
+          val.equals(Lexemes.SUPER.value()) ||
+          val.equals(Lexemes.THIS.value()) ||
+          val.equals(Lexemes.WHILE.value()) ||
+          val.equals(Lexemes.VAR.value()) ||
+          val.equals(Lexemes.PRINT.value()));
     }
 
     public String toString() {
-      return name() + " " + lexeme();
+      return name() + " " + value();
     }
   }
 
   public static class TokenBuilder {
 
-    private Lexemes lexeme;
+    private final Lexemes lexeme;
     private Object value;
     private Span span;
 

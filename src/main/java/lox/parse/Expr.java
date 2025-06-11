@@ -4,7 +4,8 @@ import java.util.Objects;
 
 import lox.token.Token;
 
-public abstract class Expr extends Ast {
+public abstract sealed class Expr extends Ast {
+
   public static final class Terminal extends Expr {
     private final Token token;
 
@@ -15,6 +16,11 @@ public abstract class Expr extends Ast {
 
     public Token token() {
       return token;
+    }
+
+    @Override
+    public <T> T accept(AstVisitor<T> visitor) {
+      return visitor.visitTerminal(this);
     }
   }
 
@@ -28,6 +34,11 @@ public abstract class Expr extends Ast {
 
     public Expr group() {
       return ast;
+    }
+
+    @Override
+    public <T> T accept(AstVisitor<T> visitor) {
+      return visitor.visitGroup(this);
     }
   }
 
@@ -48,6 +59,11 @@ public abstract class Expr extends Ast {
 
     public Expr expr() {
       return expr;
+    }
+
+    @Override
+    public <T> T accept(AstVisitor<T> visitor) {
+      return visitor.visitUnary(this);
     }
   }
 
@@ -75,6 +91,11 @@ public abstract class Expr extends Ast {
 
     public Token op() {
       return op;
+    }
+
+    @Override
+    public <T> T accept(AstVisitor<T> visitor) {
+      return visitor.visitBinary(this);
     }
   }
 }

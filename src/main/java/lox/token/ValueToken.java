@@ -1,5 +1,5 @@
 package lox.token;
 
-interface ValueToken<T> extends Token {
-    T value();
+public interface ValueToken<T> extends Token {
+  T value();
 }
