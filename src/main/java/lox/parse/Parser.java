@@ -3,6 +3,7 @@ package lox.parse;
 import static lox.util.LogUtil.trace;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,6 +29,10 @@ public class Parser {
 
     public Result<List<Ast>, List<Throwable>> parse() {
         final var scanResult = scanner.scan(source);
+
+        if (scanResult.hasErr()) {
+            return new Result<>(Collections.emptyList(), scanResult.error());
+        }
 
         final var ast = new ArrayList<Ast>();
         final var errors = new ArrayList<Throwable>();
@@ -233,10 +238,11 @@ public class Parser {
                         || t.lexeme() == Lexemes.IDENTIFIER);
         if (token.isPresent()) {
             return new Expr.Terminal(token.get());
+        } else if (tokens.hasNext()) {
+            throw new UnexpectedTokenException(tokens.next().lexeme().value());
+        } else {
+            throw new UnexpectedEofException();
         }
-
-        // TODO: make exception type
-        throw new RuntimeException("unexpected token '" + tokens.peek().get().lexeme().value() + "'");
     }
 
     private Ast block(final PeekableIterator<Token> tokens) {
