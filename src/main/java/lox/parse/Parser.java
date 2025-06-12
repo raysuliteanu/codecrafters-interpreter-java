@@ -191,7 +191,7 @@ public class Parser {
         var e = switch (tokens.nextIf((t) -> t.lexeme() == Lexemes.BANG || t.lexeme() == Lexemes.MINUS)) {
             case Optional<Token> o when o.isPresent() -> {
                 final var op = o.get();
-                final Expr expr = primary(tokens);
+                final Expr expr = unary(tokens);
                 yield new Expr.Unary(op, expr);
             }
             default -> {
