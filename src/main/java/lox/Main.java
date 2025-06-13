@@ -71,15 +71,27 @@ public class Main {
 
                     if (parse.isOk()) {
                         for (var ast : parse.success()) {
-                            // System.out.println("(" + ast + ")");
                             System.out.println(ast);
                         }
                     }
                 }
                 break;
             case evaluate:
-                System.err.println("Evaluate command not yet implemented");
-                rc = 1;
+                fileContents = readFile(filename);
+                if (fileContents.isPresent()) {
+                    var result = new lox.eval.Interpreter().evaluate(fileContents.get());
+
+                    if (result.hasErr()) {
+                        rc = 70;
+                        for (var error : result.error()) {
+                            System.err.println(error);
+                        }
+                    }
+
+                    if (result.isOk()) {
+                        System.out.println(((Optional) result.success()).get());
+                    }
+                }
                 break;
         }
 
