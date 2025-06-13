@@ -1,4 +1,4 @@
-package lox;
+package lox.token;
 
 import org.junit.jupiter.api.Test;
 
@@ -17,5 +17,5 @@ class NumberTokenTest {
 
         token = new NumberToken("123.");
         assertThat(token.value()).isEqualTo(123.0);
-     }
+    }
 }
