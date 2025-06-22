@@ -1,0 +1,15 @@
+{
+    "java.test.config": [
+        {
+            "name": "junit",
+            "workingDirectory": "${workspaceFolder}",
+            "vmArgs": [
+                "--enable-preview"
+            ],
+            "args": []
+        }
+    ],
+    "java.configuration.maven.userSettings": null,
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.jdt.ls.vmargs": "--enable-preview"
+}

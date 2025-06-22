@@ -1,20 +1,22 @@
 package lox.eval;
 
-public class NumberResult implements EvaluationResult {
-    private final Number value;
+import lox.token.NumberToken;
 
-    public NumberResult(Number value) {
+public class NumberResult implements EvaluationResult {
+    private final NumberToken value;
+
+    public NumberResult(NumberToken value) {
         this.value = value;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T> T value() {
-        return (T) value;
+        return (T) value.value();
     }
 
     @Override
     public String toString() {
-        return value.toString();
+        return value.original();
     }
 }

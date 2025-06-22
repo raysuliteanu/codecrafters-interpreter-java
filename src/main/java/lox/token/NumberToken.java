@@ -22,6 +22,10 @@ public class NumberToken extends SpanningToken implements ValueToken<Number> {
         return this.value;
     }
 
+    public String original() {
+        return original;
+    }
+
     @Override
     public String toString() {
         return lexeme.name() + " " + original + " " + value;

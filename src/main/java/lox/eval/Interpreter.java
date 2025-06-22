@@ -60,7 +60,7 @@ public class Interpreter {
         Token token = terminal.token();
         Lexemes lexeme = token.lexeme();
         return switch (lexeme) {
-            case NUMBER -> new NumberResult(((NumberToken) token).value());
+            case NUMBER -> new NumberResult(((NumberToken) token));
             case STRING -> new StringResult(((StringToken) token).value());
             case TRUE -> new BooleanResult(true);
             case FALSE -> new BooleanResult(false);
