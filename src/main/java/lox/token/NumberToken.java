@@ -5,7 +5,7 @@ import lox.token.Tokens.Lexemes;
 public class NumberToken extends SpanningToken implements ValueToken<Number> {
 
     private final String original;
-    private final Number value;
+    private final Double value;
 
     NumberToken(String original) {
         super(Lexemes.NUMBER);
@@ -18,7 +18,7 @@ public class NumberToken extends SpanningToken implements ValueToken<Number> {
         this.value = Double.parseDouble(tmp);
     }
 
-    public Number value() {
+    public Double value() {
         return this.value;
     }
 
