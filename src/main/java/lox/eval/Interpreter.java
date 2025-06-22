@@ -51,6 +51,7 @@ public class Interpreter {
         LogUtil.trace("evalAll");
         return switch (ast) {
             case Expr.Terminal t -> evalTerminal(t);
+            case Expr.Group g -> evalAll(g.group());
             default -> null; // TODO:
         };
     }
