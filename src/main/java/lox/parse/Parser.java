@@ -21,10 +21,16 @@ public class Parser {
 
     private final Scanner scanner;
     private final CharSequence source;
+    private final boolean expressionMode;
 
     public Parser(final CharSequence source) {
+        this(source, false);
+    }
+
+    public Parser(final CharSequence source, boolean expressionMode) {
         this.scanner = new Scanner();
         this.source = source;
+        this.expressionMode = expressionMode;
     }
 
     public Result<List<Ast>, List<Throwable>> parse() {
@@ -88,21 +94,23 @@ public class Parser {
         trace("expression stmt");
         final var ast = expression(tokens);
 
-        // check for an eat semicolon, or else error
-        // TODO: for now, comment out checking for semicolon
-        // since we're not at the statement stage in CC
-        /*
-         * tokens.nextIf((t) -> t.lexeme() == Lexemes.SEMICOLON)
-         * .orElseThrow(() -> {
-         * if (tokens.hasNext()) {
-         * return new MissingTokenException(
-         * Lexemes.SEMICOLON.value(),
-         * tokens.peek().get().lexeme().value());
-         * } else {
-         * return new UnexpectedEofException();
-         * }
-         * });
-         */
+        // In expression mode, semicolon is optional
+        if (!expressionMode) {
+            // check for an eat semicolon, or else error
+            tokens.nextIf((t) -> t.lexeme() == Lexemes.SEMICOLON)
+                    .orElseThrow(() -> {
+                        if (tokens.hasNext()) {
+                            return new MissingTokenException(
+                                    Lexemes.SEMICOLON.value(),
+                                    tokens.peek().get().lexeme().value());
+                        } else {
+                            return new UnexpectedEofException();
+                        }
+                    });
+        } else {
+            // In expression mode, consume semicolon if present but don't require it
+            tokens.nextIf((t) -> t.lexeme() == Lexemes.SEMICOLON);
+        }
 
         return ast;
     }

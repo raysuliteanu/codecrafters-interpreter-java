@@ -1,6 +1,8 @@
 package lox;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -17,12 +19,13 @@ public class Main {
         tokenize,
         parse,
         evaluate,
+        run,
     }
 
     public static void main(String[] args) {
-        if (args.length < 2) {
-            System.err.println("Usage: ./your_program.sh <command> <filename>");
-            System.err.println("Commands: tokenize, parse, evaluate");
+        if (args.length < 1) {
+            System.err.println("Usage: ./your_program.sh <command> [filename]");
+            System.err.println("Commands: tokenize, parse, evaluate (require filename), run (no filename)");
             System.exit(1);
         }
 
@@ -34,7 +37,13 @@ public class Main {
             System.exit(1);
         }
 
-        String filename = args[1];
+        // Check if filename is required for this command
+        if (command != Options.run && args.length < 2) {
+            System.err.println("Usage: ./your_program.sh " + command + " <filename>");
+            System.exit(1);
+        }
+
+        String filename = args.length > 1 ? args[1] : null;
 
         int rc = 0;
         Optional<String> fileContents;
@@ -80,7 +89,7 @@ public class Main {
             case evaluate:
                 fileContents = readFile(filename);
                 if (fileContents.isPresent()) {
-                    var result = new lox.eval.Interpreter().evaluate(fileContents.get());
+                    var result = new lox.eval.Interpreter().evaluate(fileContents.get(), true);
 
                     if (result.hasErr()) {
                         rc = 70;
@@ -93,6 +102,9 @@ public class Main {
                         System.out.println(((Optional) result.success()).get());
                     }
                 }
+                break;
+            case run:
+                runRepl();
                 break;
         }
 
@@ -117,5 +129,32 @@ public class Main {
         }
 
         return Optional.ofNullable(fileContents);
+    }
+
+    private static void runRepl() {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        lox.eval.Interpreter interpreter = new lox.eval.Interpreter();
+
+        System.out.print("> ");
+        try {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                var result = interpreter.evaluate(line, true);
+                
+                if (result.hasErr()) {
+                    for (var error : result.error()) {
+                        System.err.println(error);
+                    }
+                }
+                
+                if (result.isOk()) {
+                    System.out.println(((Optional) result.success()).get());
+                }
+                
+                System.out.print("> ");
+            }
+        } catch (IOException e) {
+            System.err.println("Error reading input: " + e.getMessage());
+        }
     }
 }

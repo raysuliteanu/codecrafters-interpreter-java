@@ -20,8 +20,13 @@ import lox.util.LogUtil;
 
 public class Interpreter {
     public Result<Optional<EvaluationResult<?>>, List<Throwable>> evaluate(final CharSequence source) {
+        return evaluate(source, false);
+    }
+
+    public Result<Optional<EvaluationResult<?>>, List<Throwable>> evaluate(final CharSequence source,
+            boolean expressionMode) {
         LogUtil.trace("evaluate");
-        var parser = new Parser(source).parse();
+        var parser = new Parser(source, expressionMode).parse();
 
         if (parser.hasErr()) {
             return new Result<>(null, parser.error());
@@ -55,7 +60,7 @@ public class Interpreter {
             case Expr.Group g -> evalAll(g.group());
             case Expr.Unary u -> evalUnary(u);
             case Expr.Binary b -> evalBinary(b);
-            default -> null; // TODO:
+            default -> null; // TODO: ???
         };
     }
 
