@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-import lox.eval.NumberResult;
+import lox.eval.DoubleResult;
 import lox.parse.Ast;
 import lox.token.Scanner;
 import lox.token.Token;

@@ -1,30 +1,29 @@
 package lox.eval;
 
-import lox.token.NumberToken;
+import lox.token.DoubleToken;
 
-public class NumberResult implements EvaluationResult {
+public class DoubleResult implements EvaluationResult<Double> {
     private final Double value;
     private final String original;
 
-    public NumberResult(NumberToken token) {
+    public DoubleResult(DoubleToken token) {
         this.value = token.value();
         this.original = token.original();
     }
 
-    public NumberResult(Double value) {
+    public DoubleResult(Double value) {
         this.value = value;
         this.original = value.toString();
     }
 
-    public NumberResult(String value) {
+    public DoubleResult(String value) {
         this.value = Double.parseDouble(value);
         this.original = value;
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> T value() {
-        return (T) value;
+    public Double value() {
+        return value;
     }
 
     @Override

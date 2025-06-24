@@ -1,6 +1,6 @@
 package lox.eval;
 
-public class StringResult implements EvaluationResult {
+public class StringResult implements EvaluationResult<CharSequence> {
     private final CharSequence value;
 
     public StringResult(final CharSequence value) {
@@ -8,9 +8,8 @@ public class StringResult implements EvaluationResult {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> T value() {
-        return (T) value;
+    public CharSequence value() {
+        return value;
     }
 
     @Override

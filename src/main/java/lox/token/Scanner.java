@@ -17,12 +17,11 @@ import lox.util.Tuples;
 public class Scanner {
 
     Tuple thisOrThat(
-        final PeekableIterator<Character> chars,
-        final Character match,
-        final Lexemes combo,
-        final Lexemes single,
-        final long offset
-    ) {
+            final PeekableIterator<Character> chars,
+            final Character match,
+            final Lexemes combo,
+            final Lexemes single,
+            final long offset) {
         if (matches(chars.peek(), match)) {
             chars.next(); // eat matching '='
             return Tuples.of(new TokenBuilder(combo), offset + 1);
@@ -61,12 +60,11 @@ public class Scanner {
                     case '*' -> new TokenBuilder(Lexemes.STAR);
                     case '<' -> {
                         var res = thisOrThat(
-                            chars,
-                            '=',
-                            Lexemes.LESS_EQUAL,
-                            Lexemes.LESS,
-                            offset
-                        );
+                                chars,
+                                '=',
+                                Lexemes.LESS_EQUAL,
+                                Lexemes.LESS,
+                                offset);
 
                         var tokenBuilder = (TokenBuilder) res.get(0);
                         offset = (long) res.get(1);
@@ -75,12 +73,11 @@ public class Scanner {
                     }
                     case '>' -> {
                         var res = thisOrThat(
-                            chars,
-                            '=',
-                            Lexemes.GREATER_EQUAL,
-                            Lexemes.GREATER,
-                            offset
-                        );
+                                chars,
+                                '=',
+                                Lexemes.GREATER_EQUAL,
+                                Lexemes.GREATER,
+                                offset);
 
                         var tokenBuilder = (TokenBuilder) res.get(0);
                         offset = (long) res.get(1);
@@ -89,12 +86,11 @@ public class Scanner {
                     }
                     case '!' -> {
                         var res = thisOrThat(
-                            chars,
-                            '=',
-                            Lexemes.BANG_EQUAL,
-                            Lexemes.BANG,
-                            offset
-                        );
+                                chars,
+                                '=',
+                                Lexemes.BANG_EQUAL,
+                                Lexemes.BANG,
+                                offset);
 
                         var tokenBuilder = (TokenBuilder) res.get(0);
                         offset = (long) res.get(1);
@@ -103,12 +99,11 @@ public class Scanner {
                     }
                     case '=' -> {
                         var res = thisOrThat(
-                            chars,
-                            '=',
-                            Lexemes.EQUAL_EQUAL,
-                            Lexemes.EQUAL,
-                            offset
-                        );
+                                chars,
+                                '=',
+                                Lexemes.EQUAL_EQUAL,
+                                Lexemes.EQUAL,
+                                offset);
 
                         var tokenBuilder = (TokenBuilder) res.get(0);
                         offset = (long) res.get(1);
@@ -118,9 +113,7 @@ public class Scanner {
                     case '/' -> {
                         // check for line comment
                         if (matches(chars.peek(), '/')) {
-                            while (
-                                chars.hasNext() && !matches(chars.peek(), '\n')
-                            ) {
+                            while (chars.hasNext() && !matches(chars.peek(), '\n')) {
                                 chars.next(); // eat matching '='
                                 ++offset;
                             }
@@ -142,9 +135,8 @@ public class Scanner {
 
                         if (!chars.hasNext()) {
                             throw new UnterminatedStringException(
-                                sb.toString(),
-                                Span.of(line, offset, 0)
-                            );
+                                    sb.toString(),
+                                    Span.of(line, offset, 0));
                         }
 
                         var _n = chars.next(); // eat closing '"'
@@ -152,62 +144,41 @@ public class Scanner {
 
                         assert _n == '"' : "expected closing '\"'";
                         yield new TokenBuilder(Lexemes.STRING).withValue(
-                            sb.toString()
-                        );
+                                sb.toString());
                     }
                     case Character ch when Character.isDigit(ch) -> {
-                        // trace("found start of number: " + ch);
-                        // trace(chars.toString());
-
                         StringBuilder sb = new StringBuilder();
                         sb.append(ch);
 
-                        while (
-                            chars.hasNext() &&
-                            matches(
-                                chars.peek(),
-                                t -> Character.isDigit(t) || t == '.'
-                            )
-                        ) {
+                        while (chars.hasNext() &&
+                                matches(
+                                        chars.peek(),
+                                        t -> Character.isDigit(t) || t == '.')) {
                             Character cur = chars.next();
                             sb.append(cur);
-                            // trace("sb: " + sb);
                             ++offset;
 
-                            // trace(chars.toString());
-
-                            if (
-                                cur == '.' &&
-                                !matches(chars.peek(), Character::isDigit)
-                            ) {
+                            if (cur == '.' &&
+                                    !matches(chars.peek(), Character::isDigit)) {
                                 // two '.' in a row e.g. 1..foo; so the number is '1.' and the 2nd '.' is a
                                 // separate token
-                                // trace("breaking at: " + chars);
                                 break;
                             }
                         }
 
-                        // trace(t.toString());
-                        yield new TokenBuilder(Lexemes.NUMBER).withValue(
-                            sb.toString()
-                        );
+                        String number = sb.toString();
+                        yield new TokenBuilder(Lexemes.NUMBER).withValue(number);
                     }
-                    case Character ch when (
-                        Character.isLetter(ch) || ch == '_'
-                    ) -> {
+                    case Character ch when (Character.isLetter(ch) || ch == '_') -> {
                         // trace("found start of keyword or identifier");
                         StringBuilder sb = new StringBuilder();
                         sb.append(ch);
-                        while (
-                            chars.hasNext() &&
-                            matches(
-                                chars.peek(),
-                                t ->
-                                    Character.isLetter(t) ||
-                                    Character.isDigit(t) ||
-                                    t == '_'
-                            )
-                        ) {
+                        while (chars.hasNext() &&
+                                matches(
+                                        chars.peek(),
+                                        t -> Character.isLetter(t) ||
+                                                Character.isDigit(t) ||
+                                                t == '_')) {
                             Character next = chars.next();
                             // trace("adding '" + next + "'");
                             sb.append(next);
@@ -218,19 +189,16 @@ public class Scanner {
                         if (Lexemes.isKeyword(val)) {
                             trace("found keyword: " + sb);
                             yield new TokenBuilder(
-                                Lexemes.valueOf(val.toUpperCase())
-                            );
+                                    Lexemes.valueOf(val.toUpperCase()));
                         } else {
                             trace("found identifier: " + sb);
                             yield new TokenBuilder(
-                                Lexemes.IDENTIFIER
-                            ).withValue(val);
+                                    Lexemes.IDENTIFIER).withValue(val);
                         }
                     }
                     default -> throw new UnexpectedCharacterException(
-                        c,
-                        Span.of(line, offset, 1)
-                    );
+                            c,
+                            Span.of(line, offset, 1));
                 };
             } catch (ParseException e) {
                 exceptions.add(e);

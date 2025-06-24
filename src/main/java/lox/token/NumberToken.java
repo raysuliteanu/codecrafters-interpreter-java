@@ -2,23 +2,17 @@ package lox.token;
 
 import lox.token.Tokens.Lexemes;
 
-public class NumberToken extends SpanningToken implements ValueToken<Number> {
-
+public abstract class NumberToken<T extends Number> extends SpanningToken implements ValueToken<T> {
     private final String original;
-    private final Double value;
+    private final T value;
 
-    NumberToken(String original) {
+    protected NumberToken(String original, T value) {
         super(Lexemes.NUMBER);
+        this.value = value;
         this.original = original;
-
-        String tmp = original;
-        if (original.endsWith(".")) {
-            tmp = original + "0";
-        }
-        this.value = Double.parseDouble(tmp);
     }
 
-    public Double value() {
+    public T value() {
         return this.value;
     }
 

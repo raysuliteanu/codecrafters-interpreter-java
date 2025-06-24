@@ -9,13 +9,13 @@ class NumberTokenTest {
 
     @Test
     void value() {
-        var token = new NumberToken("123");
-        assertThat(token.value()).isEqualTo(123.0);
+        var itoken = new IntegerToken("123");
+        assertThat(itoken.value()).isEqualTo(123);
 
-        token = new NumberToken("123.456");
+        var token = new DoubleToken("123.456");
         assertThat(token.value()).isEqualTo(123.456);
 
-        token = new NumberToken("123.");
+        token = new DoubleToken("123.");
         assertThat(token.value()).isEqualTo(123.0);
     }
 }

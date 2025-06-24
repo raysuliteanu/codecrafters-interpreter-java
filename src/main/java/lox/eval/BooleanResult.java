@@ -1,6 +1,6 @@
 package lox.eval;
 
-public class BooleanResult implements EvaluationResult {
+public class BooleanResult implements EvaluationResult<Boolean> {
     private final Boolean value;
 
     public BooleanResult(final Boolean value) {
@@ -8,9 +8,8 @@ public class BooleanResult implements EvaluationResult {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> T value() {
-        return (T) value;
+    public Boolean value() {
+        return value;
     }
 
     @Override

@@ -1,11 +1,9 @@
 package lox.eval;
 
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Gatherer;
-import java.util.stream.Gatherers;
 
 import lox.LoxException;
 import lox.NotImplementedException;
@@ -13,15 +11,16 @@ import lox.Result;
 import lox.parse.Ast;
 import lox.parse.Expr;
 import lox.parse.Parser;
+import lox.token.DoubleToken;
+import lox.token.IntegerToken;
 import lox.token.Token;
 import lox.token.Tokens.Lexemes;
-import lox.token.ValueToken;
-import lox.token.NumberToken;
 import lox.token.StringToken;
+import lox.token.ValueToken;
 import lox.util.LogUtil;
 
 public class Interpreter {
-    public Result<Optional<EvaluationResult>, List<Throwable>> evaluate(final CharSequence source) {
+    public Result<Optional<EvaluationResult<?>>, List<Throwable>> evaluate(final CharSequence source) {
         LogUtil.trace("evaluate");
         var parser = new Parser(source).parse();
 
@@ -31,12 +30,12 @@ public class Interpreter {
 
         var errors = new ArrayList<Throwable>();
 
-        Optional<EvaluationResult> result = eval(parser.success(), errors);
+        Optional<EvaluationResult<?>> result = eval(parser.success(), errors);
 
         return new Result<>(result, errors);
     }
 
-    private Optional<EvaluationResult> eval(final List<Ast> tree, final List<Throwable> errors) {
+    private Optional<EvaluationResult<?>> eval(final List<Ast> tree, final List<Throwable> errors) {
         LogUtil.trace("eval");
         EvalState state = new EvalState();
         tree.forEach((ast) -> {
@@ -46,10 +45,11 @@ public class Interpreter {
                 errors.add(e);
             }
         });
+
         return Optional.ofNullable(state.get());
     }
 
-    private EvaluationResult evalAll(Ast ast) {
+    private EvaluationResult<?> evalAll(Ast ast) {
         LogUtil.trace("evalAll");
         return switch (ast) {
             case Expr.Terminal t -> evalTerminal(t);
@@ -60,128 +60,149 @@ public class Interpreter {
         };
     }
 
-    private EvaluationResult evalUnary(final Expr.Unary unary) {
+    private EvaluationResult<?> evalUnary(final Expr.Unary unary) {
         LogUtil.trace("evalUnary");
-        EvaluationResult e = evalAll(unary.expr());
+        EvaluationResult<?> e = evalAll(unary.expr());
         var token = unary.token();
         var lexeme = token.lexeme();
         return switch (lexeme) {
             case Lexemes.BANG -> {
-                if (e instanceof BooleanResult br) {
-                    // e.g. !true
-                    yield new BooleanResult(!(boolean) br.value());
-                } else if (e instanceof NumberResult nr) {
-                    // e.g. !10
-                    yield new BooleanResult(false);
-                } else if (e instanceof NilResult nr) {
-                    // e.g. !nil
-                    yield new BooleanResult(true);
-                } else {
-                    throw new EvalException("invalid operation " + lexeme.value() + " for " + e);
+                switch (e) {
+                    case BooleanResult br -> {
+                        // e.g. !true
+                        yield new BooleanResult(!(boolean) br.value());
+                    }
+                    case DoubleResult nr -> {
+                        // e.g. !10
+                        yield new BooleanResult(false);
+                    }
+                    case NilResult nr -> {
+                        // e.g. !nil
+                        yield new BooleanResult(true);
+                    }
+                    case null, default -> throw new EvalException("invalid operation " + lexeme.value() + " for " + e);
                 }
             }
             case Lexemes.MINUS -> {
-                if (e instanceof NumberResult nr) {
-                    yield new NumberResult("-" + nr.toString());
+                if (e instanceof DoubleResult nr) {
+                    yield new DoubleResult("-" + nr);
                 } else {
                     throw new EvalException("invalid operation " + lexeme.value() + " for " + e);
                 }
             }
-            default -> {
-                throw new EvalException("invalid operation " + lexeme.value() + " for " + e);
-            }
+            default -> throw new EvalException("invalid operation " + lexeme.value() + " for " + e);
         };
     }
 
-    private EvaluationResult evalBinary(final Expr.Binary binary) {
+    private EvaluationResult<?> evalBinary(final Expr.Binary binary) {
         LogUtil.trace("evalBinary");
-        EvaluationResult left = evalAll(binary.left());
-        EvaluationResult right = evalAll(binary.right());
+        EvaluationResult<?> left = evalAll(binary.left());
+        EvaluationResult<?> right = evalAll(binary.right());
         var lexeme = binary.op().lexeme();
         return switch (lexeme) {
             case Lexemes.PLUS -> {
-                if (left instanceof StringResult && right instanceof StringResult) {
+                if (left instanceof StringResult lr && right instanceof StringResult rr) {
                     // string concatenation
-                    yield new StringResult((String) left.value() + (String) right.value());
-                } else if (left instanceof NumberResult && right instanceof NumberResult) {
+                    yield new StringResult(lr.value().toString() + rr.value());
+                } else if (left instanceof DoubleResult lr && right instanceof DoubleResult rr) {
                     // number addition
-                    yield new NumberResult((Double) left.value() + (Double) right.value());
+                    yield new DoubleResult(lr.value() + rr.value());
                 } else {
                     throw new EvalException("invalid operation " + lexeme);
                 }
             }
             case Lexemes.MINUS -> {
                 // e.g. 1 - 2
-                yield new NumberResult((Double) left.value() - (Double) right.value());
+                if (left instanceof DoubleResult lr && right instanceof DoubleResult rr) {
+                    // number addition
+                    yield new DoubleResult(lr.value() - rr.value());
+                } else {
+                    throw new EvalException("invalid operation " + lexeme);
+                }
             }
             case Lexemes.STAR -> {
                 // e.g. 1 * 2
-                yield new NumberResult((Double) left.value() * (Double) right.value());
+                if (left instanceof DoubleResult lr && right instanceof DoubleResult rr) {
+                    // number addition
+                    yield new DoubleResult(lr.value() * rr.value());
+                } else {
+                    throw new EvalException("invalid operation " + lexeme);
+                }
             }
             case Lexemes.SLASH -> {
                 // e.g. 1 / 2
-                yield new NumberResult((Double) left.value() / (Double) right.value());
+                if (left instanceof DoubleResult lr && right instanceof DoubleResult rr) {
+                    // number addition
+                    yield new DoubleResult(lr.value() / rr.value());
+                } else {
+                    throw new EvalException("invalid operation " + lexeme);
+                }
             }
             case Lexemes.EQUAL_EQUAL -> {
                 // e.g. 1 == 2
-                if (left instanceof NumberResult && right instanceof NumberResult) {
-                    yield new BooleanResult((Double) left.value() == (Double) right.value());
+                if (left instanceof DoubleResult lr && right instanceof DoubleResult rr) {
+                    yield new BooleanResult(Objects.equals(lr.value(), rr.value()));
                 } else {
                     yield new BooleanResult(false);
                 }
             }
             case Lexemes.LESS -> {
                 // e.g. 1 < 2
-                if (left instanceof NumberResult && right instanceof NumberResult) {
-                    yield new BooleanResult((Double) left.value() < (Double) right.value());
+                if (left instanceof DoubleResult lr && right instanceof DoubleResult rr) {
+                    yield new BooleanResult(lr.value() < rr.value());
                 } else {
                     yield new BooleanResult(false);
                 }
             }
             case Lexemes.LESS_EQUAL -> {
                 // e.g. 1 <= 2
-                if (left instanceof NumberResult && right instanceof NumberResult) {
-                    yield new BooleanResult((Double) left.value() <= (Double) right.value());
+                if (left instanceof DoubleResult lr && right instanceof DoubleResult rr) {
+                    yield new BooleanResult(lr.value() <= rr.value());
                 } else {
                     yield new BooleanResult(false);
                 }
             }
             case Lexemes.GREATER -> {
                 // e.g. 1 > 2
-                if (left instanceof NumberResult && right instanceof NumberResult) {
-                    yield new BooleanResult((Double) left.value() > (Double) right.value());
+                if (left instanceof DoubleResult lr && right instanceof DoubleResult rr) {
+                    yield new BooleanResult(lr.value() > rr.value());
                 } else {
                     yield new BooleanResult(false);
                 }
             }
             case Lexemes.GREATER_EQUAL -> {
                 // e.g. 1 >= 2
-                if (left instanceof NumberResult && right instanceof NumberResult) {
-                    yield new BooleanResult((Double) left.value() >= (Double) right.value());
+                if (left instanceof DoubleResult lr && right instanceof DoubleResult rr) {
+                    yield new BooleanResult(lr.value() >= rr.value());
                 } else {
                     yield new BooleanResult(false);
                 }
             }
             case Lexemes.BANG_EQUAL -> {
                 // e.g. 1 != 2
-                if (left instanceof NumberResult && right instanceof NumberResult) {
-                    yield new BooleanResult((Double) left.value() != (Double) right.value());
+                if (left instanceof DoubleResult lr && right instanceof DoubleResult rr) {
+                    yield new BooleanResult(!Objects.equals(lr.value(), rr.value()));
                 } else {
                     yield new BooleanResult(false);
                 }
             }
-            default -> {
-                throw new EvalException("invalid operation " + lexeme);
-            }
+            default -> throw new EvalException("invalid operation " + lexeme);
         };
     }
 
-    private EvaluationResult evalTerminal(final Expr.Terminal terminal) {
+    private EvaluationResult<?> evalTerminal(final Expr.Terminal terminal) {
         LogUtil.trace("evalTerminal");
         Token token = terminal.token();
         Lexemes lexeme = token.lexeme();
         return switch (lexeme) {
-            case NUMBER -> new NumberResult(((NumberToken) token));
+            case NUMBER -> {
+                if (token instanceof IntegerToken it) {
+                    yield new IntegerResult(it.value());
+                }
+                else {
+                    yield new DoubleResult(((DoubleToken) token));
+                }
+            }
             case STRING -> new StringResult(((StringToken) token).value());
             case TRUE -> new BooleanResult(true);
             case FALSE -> new BooleanResult(false);

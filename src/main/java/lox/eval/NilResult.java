@@ -1,10 +1,9 @@
 package lox.eval;
 
-public class NilResult implements EvaluationResult {
+public class NilResult implements EvaluationResult<Void> {
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> T value() {
-        return (T) null;
+    public Void value() {
+        return null;
     }
 
     @Override
