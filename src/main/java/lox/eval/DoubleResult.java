@@ -28,6 +28,6 @@ public class DoubleResult implements EvaluationResult<Double> {
 
     @Override
     public String toString() {
-        return original;
+        return original.endsWith(".0") ? original.substring(0, original.length() - 2) : original;
     }
 }

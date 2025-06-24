@@ -125,13 +125,7 @@ public class Tokens {
             Token t = switch (lexeme) {
                 case STRING -> new StringToken((String) value);
                 case NUMBER -> {
-                    try {
-                        Integer.parseInt((String) value);
-                        yield new IntegerToken((String) value);
-                    } catch (NumberFormatException e) {
-                        // not an integer
-                        yield new DoubleToken((String) value);
-                    }
+                    yield new DoubleToken((String) value);
                 }
                 case IDENTIFIER -> new IdentifierToken((String) value);
                 default -> new SpanningToken(lexeme);

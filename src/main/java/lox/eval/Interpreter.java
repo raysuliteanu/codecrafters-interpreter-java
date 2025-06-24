@@ -12,7 +12,6 @@ import lox.parse.Ast;
 import lox.parse.Expr;
 import lox.parse.Parser;
 import lox.token.DoubleToken;
-import lox.token.IntegerToken;
 import lox.token.Token;
 import lox.token.Tokens.Lexemes;
 import lox.token.StringToken;
@@ -108,7 +107,7 @@ public class Interpreter {
                     // number addition
                     yield new DoubleResult(lr.value() + rr.value());
                 } else {
-                    throw new EvalException("invalid operation " + lexeme);
+                    throw new EvalException("Operands must be two numbers or two strings.");
                 }
             }
             case Lexemes.MINUS -> {
@@ -196,12 +195,7 @@ public class Interpreter {
         Lexemes lexeme = token.lexeme();
         return switch (lexeme) {
             case NUMBER -> {
-                if (token instanceof IntegerToken it) {
-                    yield new IntegerResult(it.value());
-                }
-                else {
-                    yield new DoubleResult(((DoubleToken) token));
-                }
+                yield new DoubleResult(((DoubleToken) token));
             }
             case STRING -> new StringResult(((StringToken) token).value());
             case TRUE -> new BooleanResult(true);
