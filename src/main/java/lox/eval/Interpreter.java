@@ -141,6 +141,8 @@ public class Interpreter {
                 // e.g. 1 == 2
                 if (left instanceof DoubleResult lr && right instanceof DoubleResult rr) {
                     yield new BooleanResult(Objects.equals(lr.value(), rr.value()));
+                } else if (left instanceof StringResult lr && right instanceof StringResult rr) {
+                    yield new BooleanResult(Objects.equals(lr.value(), rr.value()));
                 } else {
                     yield new BooleanResult(false);
                 }
@@ -180,6 +182,8 @@ public class Interpreter {
             case Lexemes.BANG_EQUAL -> {
                 // e.g. 1 != 2
                 if (left instanceof DoubleResult lr && right instanceof DoubleResult rr) {
+                    yield new BooleanResult(!Objects.equals(lr.value(), rr.value()));
+                } else if (left instanceof StringResult lr && right instanceof StringResult rr) {
                     yield new BooleanResult(!Objects.equals(lr.value(), rr.value()));
                 } else {
                     yield new BooleanResult(false);
