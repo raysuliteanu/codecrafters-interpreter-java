@@ -84,7 +84,7 @@ public class Interpreter {
             }
             case Lexemes.MINUS -> {
                 if (e instanceof DoubleResult nr) {
-                    yield new DoubleResult("-" + nr);
+                    yield new DoubleResult(-nr.value());
                 } else {
                     throw new EvalException("invalid operation " + lexeme.value() + " for " + e);
                 }
@@ -193,9 +193,9 @@ public class Interpreter {
         LogUtil.trace("evalTerminal");
         Token token = terminal.token();
         Lexemes lexeme = token.lexeme();
-        return switch (lexeme) {
+        var result = switch (lexeme) {
             case NUMBER -> {
-                yield new DoubleResult(((DoubleToken) token));
+                yield new DoubleResult(((DoubleToken) token).value());
             }
             case STRING -> new StringResult(((StringToken) token).value());
             case TRUE -> new BooleanResult(true);
@@ -203,6 +203,8 @@ public class Interpreter {
             case NIL -> new NilResult();
             default -> throw new NotImplementedException(lexeme.toString());
         };
+        LogUtil.trace("evalTerminal result: " + result);
+        return result;
     }
 
 }
