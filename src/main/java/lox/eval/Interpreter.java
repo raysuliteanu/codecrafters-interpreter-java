@@ -152,7 +152,7 @@ public class Interpreter {
                 if (left instanceof DoubleResult lr && right instanceof DoubleResult rr) {
                     yield new BooleanResult(lr.value() < rr.value());
                 } else {
-                    yield new BooleanResult(false);
+                    throw new EvalException("Operands must be numbers.");
                 }
             }
             case Lexemes.LESS_EQUAL -> {
@@ -160,7 +160,7 @@ public class Interpreter {
                 if (left instanceof DoubleResult lr && right instanceof DoubleResult rr) {
                     yield new BooleanResult(lr.value() <= rr.value());
                 } else {
-                    yield new BooleanResult(false);
+                    throw new EvalException("Operands must be numbers.");
                 }
             }
             case Lexemes.GREATER -> {
@@ -168,7 +168,7 @@ public class Interpreter {
                 if (left instanceof DoubleResult lr && right instanceof DoubleResult rr) {
                     yield new BooleanResult(lr.value() > rr.value());
                 } else {
-                    yield new BooleanResult(false);
+                    throw new EvalException("Operands must be numbers.");
                 }
             }
             case Lexemes.GREATER_EQUAL -> {
@@ -176,7 +176,7 @@ public class Interpreter {
                 if (left instanceof DoubleResult lr && right instanceof DoubleResult rr) {
                     yield new BooleanResult(lr.value() >= rr.value());
                 } else {
-                    yield new BooleanResult(false);
+                    throw new EvalException("Operands must be numbers.");
                 }
             }
             case Lexemes.BANG_EQUAL -> {
