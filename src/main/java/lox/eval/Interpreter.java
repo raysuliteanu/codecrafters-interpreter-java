@@ -11,6 +11,7 @@ import lox.Result;
 import lox.parse.Ast;
 import lox.parse.Expr;
 import lox.parse.Parser;
+import lox.parse.ParseException;
 import lox.parse.Stmt;
 import lox.token.DoubleToken;
 import lox.token.Token;
@@ -52,12 +53,16 @@ public class Interpreter {
                     case Expr e -> evalExpr(e);
                     default -> throw new NotImplementedException(ast.toString());
                 };
-            } catch (LoxException e) {
+            } catch (ParseException e) {
                 errors.add(e);
+            } catch (EvalException e) {
+                errors.add(e);
+                break;
             }
         }
 
         return Optional.ofNullable(result);
+
     }
 
     private EvaluationResult<?> evalStatement(Stmt ast) {
