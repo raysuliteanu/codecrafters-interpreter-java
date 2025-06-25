@@ -10,8 +10,10 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import lox.eval.EvalException;
+import lox.eval.EvaluationResult;
 import lox.eval.DoubleResult;
 import lox.eval.Interpreter;
+import lox.eval.NilResult;
 import lox.parse.Ast;
 import lox.parse.ParseException;
 import lox.parse.Parser;
@@ -105,7 +107,9 @@ public class Main {
                     }
 
                     if (result.isOk()) {
-                        System.out.println(((Optional) result.success()).get());
+                        if (result.success().get() instanceof EvaluationResult er) {
+                            System.out.println(er);
+                        }
                     }
                 }
                 break;
@@ -124,8 +128,10 @@ public class Main {
                             }
                         }
 
-                        if (result.isOk() && result.success().isPresent()) {
-                            System.out.println(result.success().get());
+                        if (result.isOk()) {
+                            if (result.success().get() instanceof EvaluationResult er) {
+                                System.out.println(er);
+                            }
                         }
                     }
                 } else {

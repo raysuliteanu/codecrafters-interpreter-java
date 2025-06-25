@@ -44,25 +44,20 @@ public class Interpreter {
 
     private Optional<EvaluationResult<?>> eval(final List<Ast> tree, final List<Throwable> errors) {
         LogUtil.trace("eval");
-        EvalState state = new EvalState();
-        tree.forEach((ast) -> {
+        EvaluationResult result = null;
+        for (var ast : tree) {
             try {
-                state.set(evalAll(ast));
+                result = switch (ast) {
+                    case Stmt s -> evalStatement(s);
+                    case Expr e -> evalExpr(e);
+                    default -> throw new NotImplementedException(ast.toString());
+                };
             } catch (LoxException e) {
                 errors.add(e);
             }
-        });
+        }
 
-        return Optional.ofNullable(state.get());
-    }
-
-    private EvaluationResult<?> evalAll(Ast ast) {
-        LogUtil.trace("evalAll");
-        return switch (ast) {
-            case Stmt s -> evalStatement(s);
-            case Expr e -> evalExpr(e);
-            default -> throw new NotImplementedException(ast.toString());
-        };
+        return Optional.ofNullable(result);
     }
 
     private EvaluationResult<?> evalStatement(Stmt ast) {
@@ -78,14 +73,15 @@ public class Interpreter {
     }
 
     private EvaluationResult<?> printStmt(Stmt.PrintStmt ast) {
-        return evalAll(ast.expr());
+        System.out.println(evalExpr(ast.expr()));
+        return null;
     }
 
     private EvaluationResult<?> evalExpr(Expr ast) {
         LogUtil.trace("evalExpr");
         return switch (ast) {
             case Expr.Terminal t -> evalTerminal(t);
-            case Expr.Group g -> evalAll(g.group());
+            case Expr.Group g -> evalExpr(g.group());
             case Expr.Unary u -> evalUnary(u);
             case Expr.Binary b -> evalBinary(b);
         };
@@ -93,7 +89,7 @@ public class Interpreter {
 
     private EvaluationResult<?> evalUnary(final Expr.Unary unary) {
         LogUtil.trace("evalUnary");
-        EvaluationResult<?> e = evalAll(unary.expr());
+        EvaluationResult<?> e = evalExpr(unary.expr());
         var token = unary.token();
         var lexeme = token.lexeme();
         return switch (lexeme) {
@@ -127,8 +123,8 @@ public class Interpreter {
 
     private EvaluationResult<?> evalBinary(final Expr.Binary binary) {
         LogUtil.trace("evalBinary");
-        EvaluationResult<?> left = evalAll(binary.left());
-        EvaluationResult<?> right = evalAll(binary.right());
+        EvaluationResult<?> left = evalExpr(binary.left());
+        EvaluationResult<?> right = evalExpr(binary.right());
         var lexeme = binary.op().lexeme();
         return switch (lexeme) {
             case Lexemes.PLUS -> {
@@ -175,6 +171,20 @@ public class Interpreter {
                     yield new BooleanResult(Objects.equals(lr.value(), rr.value()));
                 } else if (left instanceof StringResult lr && right instanceof StringResult rr) {
                     yield new BooleanResult(Objects.equals(lr.value(), rr.value()));
+                } else if (left instanceof BooleanResult lr && right instanceof BooleanResult rr) {
+                    yield new BooleanResult(Objects.equals(lr.value(), rr.value()));
+                } else {
+                    yield new BooleanResult(false);
+                }
+            }
+            case Lexemes.BANG_EQUAL -> {
+                // e.g. 1 != 2
+                if (left instanceof DoubleResult lr && right instanceof DoubleResult rr) {
+                    yield new BooleanResult(!Objects.equals(lr.value(), rr.value()));
+                } else if (left instanceof StringResult lr && right instanceof StringResult rr) {
+                    yield new BooleanResult(!Objects.equals(lr.value(), rr.value()));
+                } else if (left instanceof BooleanResult lr && right instanceof BooleanResult rr) {
+                    yield new BooleanResult(!Objects.equals(lr.value(), rr.value()));
                 } else {
                     yield new BooleanResult(false);
                 }
@@ -209,16 +219,6 @@ public class Interpreter {
                     yield new BooleanResult(lr.value() >= rr.value());
                 } else {
                     throw new EvalException("Operands must be numbers.");
-                }
-            }
-            case Lexemes.BANG_EQUAL -> {
-                // e.g. 1 != 2
-                if (left instanceof DoubleResult lr && right instanceof DoubleResult rr) {
-                    yield new BooleanResult(!Objects.equals(lr.value(), rr.value()));
-                } else if (left instanceof StringResult lr && right instanceof StringResult rr) {
-                    yield new BooleanResult(!Objects.equals(lr.value(), rr.value()));
-                } else {
-                    yield new BooleanResult(false);
                 }
             }
             default -> throw new EvalException("invalid operation " + lexeme);
