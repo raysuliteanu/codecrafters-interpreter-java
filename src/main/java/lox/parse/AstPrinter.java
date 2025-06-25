@@ -48,7 +48,7 @@ public class AstPrinter implements AstVisitor<String> {
 
     @Override
     public String visitPrintStmt(PrintStmt printStmt) {
-        throw new UnsupportedOperationException("Unimplemented method 'visitPrintStmt'");
+        return "PRINT " + printStmt.expr();
     }
 
     @Override

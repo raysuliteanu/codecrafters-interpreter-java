@@ -1,8 +1,6 @@
 package lox.parse;
 
-import lox.LoxException;
-
-public class UnexpectedTokenException extends LoxException {
+public class UnexpectedTokenException extends ParseException {
     public UnexpectedTokenException(String token) {
         super("Unexpected token " + token);
     }

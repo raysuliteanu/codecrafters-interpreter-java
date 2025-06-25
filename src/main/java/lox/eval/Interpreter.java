@@ -11,6 +11,7 @@ import lox.Result;
 import lox.parse.Ast;
 import lox.parse.Expr;
 import lox.parse.Parser;
+import lox.parse.Stmt;
 import lox.token.DoubleToken;
 import lox.token.Token;
 import lox.token.Tokens.Lexemes;
@@ -19,14 +20,16 @@ import lox.token.ValueToken;
 import lox.util.LogUtil;
 
 public class Interpreter {
-    public Result<Optional<EvaluationResult<?>>, List<Throwable>> evaluate(final CharSequence source) {
-        return evaluate(source, false);
+    private final boolean expressionMode;
+
+    public Interpreter(boolean expressionMode) {
+        this.expressionMode = expressionMode;
     }
 
-    public Result<Optional<EvaluationResult<?>>, List<Throwable>> evaluate(final CharSequence source,
-            boolean expressionMode) {
-        LogUtil.trace("evaluate");
-        var parser = new Parser(source, expressionMode).parse();
+    public Result<Optional<EvaluationResult<?>>, List<Throwable>> evaluate(final CharSequence source) {
+        LogUtil.trace("evaluate: " + source);
+
+        var parser = new Parser(source, this.expressionMode).parse();
 
         if (parser.hasErr()) {
             return new Result<>(null, parser.error());
@@ -56,11 +59,35 @@ public class Interpreter {
     private EvaluationResult<?> evalAll(Ast ast) {
         LogUtil.trace("evalAll");
         return switch (ast) {
+            case Stmt s -> evalStatement(s);
+            case Expr e -> evalExpr(e);
+            default -> throw new NotImplementedException(ast.toString());
+        };
+    }
+
+    private EvaluationResult<?> evalStatement(Stmt ast) {
+        LogUtil.trace("evalStmt");
+        return switch (ast) {
+            case Stmt.PrintStmt s -> printStmt(s);
+            case Stmt.IfStmt s -> throw new NotImplementedException(s.toString());
+            case Stmt.ForStmt s -> throw new NotImplementedException(s.toString());
+            case Stmt.WhileStmt s -> throw new NotImplementedException(s.toString());
+            case Stmt.ExprStmt s -> throw new NotImplementedException(s.toString());
+            case Stmt.ReturnStmt s -> throw new NotImplementedException(s.toString());
+        };
+    }
+
+    private EvaluationResult<?> printStmt(Stmt.PrintStmt ast) {
+        return evalAll(ast.expr());
+    }
+
+    private EvaluationResult<?> evalExpr(Expr ast) {
+        LogUtil.trace("evalExpr");
+        return switch (ast) {
             case Expr.Terminal t -> evalTerminal(t);
             case Expr.Group g -> evalAll(g.group());
             case Expr.Unary u -> evalUnary(u);
             case Expr.Binary b -> evalBinary(b);
-            default -> null; // TODO: ???
         };
     }
 

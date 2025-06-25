@@ -22,4 +22,8 @@ public class EvalException extends LoxException {
     public String toString() {
         return getLocalizedMessage();
     }
+
+    public static int errorCode() {
+        return 70;
+    }
 }

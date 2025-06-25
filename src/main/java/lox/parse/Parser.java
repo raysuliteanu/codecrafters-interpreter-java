@@ -23,10 +23,6 @@ public class Parser {
     private final CharSequence source;
     private final boolean expressionMode;
 
-    public Parser(final CharSequence source) {
-        this(source, false);
-    }
-
     public Parser(final CharSequence source, boolean expressionMode) {
         this.scanner = new Scanner();
         this.source = source;
@@ -64,7 +60,7 @@ public class Parser {
                     case CLASS -> throw new NotImplementedException(token.lexeme().name());
                     case FUN -> throw new NotImplementedException(token.lexeme().name());
                     case VAR -> throw new NotImplementedException(token.lexeme().name());
-                    default -> statement(tokens);
+                    default -> this.expressionMode ? expression(tokens) : statement(tokens);
                 };
                 nodes.add(ast);
             } catch (LoxException e) {
@@ -84,33 +80,20 @@ public class Parser {
             case FOR -> forStmt(tokens);
             case IF -> ifStmt(tokens);
             case PRINT -> printStmt(tokens);
-            default -> expressionStatement(tokens);
+            default -> expression(tokens);
         };
 
-        return ast;
-    }
-
-    private Ast expressionStatement(final PeekableIterator<Token> tokens) {
-        trace("expression stmt");
-        final var ast = expression(tokens);
-
-        // In expression mode, semicolon is optional
-        if (!expressionMode) {
-            // check for an eat semicolon, or else error
-            tokens.nextIf((t) -> t.lexeme() == Lexemes.SEMICOLON)
-                    .orElseThrow(() -> {
-                        if (tokens.hasNext()) {
-                            return new MissingTokenException(
-                                    Lexemes.SEMICOLON.value(),
-                                    tokens.peek().get().lexeme().value());
-                        } else {
-                            return new UnexpectedEofException();
-                        }
-                    });
-        } else {
-            // In expression mode, consume semicolon if present but don't require it
-            tokens.nextIf((t) -> t.lexeme() == Lexemes.SEMICOLON);
-        }
+        // check for an eat semicolon, or else error
+        tokens.nextIf((t) -> t.lexeme() == Lexemes.SEMICOLON)
+                .orElseThrow(() -> {
+                    if (tokens.hasNext()) {
+                        return new MissingTokenException(
+                                Lexemes.SEMICOLON.value(),
+                                tokens.peek().get().lexeme().value());
+                    } else {
+                        return new UnexpectedEofException();
+                    }
+                });
 
         return ast;
     }
@@ -274,7 +257,12 @@ public class Parser {
     }
 
     private Ast printStmt(final PeekableIterator<Token> tokens) {
-        throw new NotImplementedException("print statement");
+        lox.util.LogUtil.trace("printStmt");
+        var printToken = tokens.next();
+        if (tokens.hasNext()) {
+            return new Stmt.PrintStmt(expression(tokens));
+        } else {
+            throw new UnexpectedEofException();
+        }
     }
-
 }

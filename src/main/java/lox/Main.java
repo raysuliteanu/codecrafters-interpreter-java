@@ -7,9 +7,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
+import lox.eval.EvalException;
 import lox.eval.DoubleResult;
+import lox.eval.Interpreter;
 import lox.parse.Ast;
+import lox.parse.ParseException;
+import lox.parse.Parser;
 import lox.token.Scanner;
 import lox.token.Token;
 
@@ -71,7 +76,7 @@ public class Main {
             case parse:
                 fileContents = readFile(filename);
                 if (fileContents.isPresent()) {
-                    Result<List<Ast>, List<Throwable>> parse = new lox.parse.Parser(fileContents.get()).parse();
+                    Result<List<Ast>, List<Throwable>> parse = new Parser(fileContents.get(), true).parse();
                     if (parse.hasErr()) {
                         rc = 65;
                         for (var error : parse.error()) {
@@ -89,10 +94,11 @@ public class Main {
             case evaluate:
                 fileContents = readFile(filename);
                 if (fileContents.isPresent()) {
-                    var result = new lox.eval.Interpreter().evaluate(fileContents.get(), true);
+                    var result = new Interpreter(true).evaluate(fileContents.get());
 
                     if (result.hasErr()) {
-                        rc = 70;
+                        rc = determineErrorCode(result.error().stream());
+
                         for (var error : result.error()) {
                             System.err.println(error);
                         }
@@ -104,11 +110,33 @@ public class Main {
                 }
                 break;
             case run:
-                runRepl();
+                if (filename != null) {
+                    // Run file
+                    fileContents = readFile(filename);
+                    if (fileContents.isPresent()) {
+                        var result = new Interpreter(false).evaluate(fileContents.get());
+
+                        if (result.hasErr()) {
+                            rc = determineErrorCode(result.error().stream());
+
+                            for (var error : result.error()) {
+                                System.err.println(error);
+                            }
+                        }
+
+                        if (result.isOk() && result.success().isPresent()) {
+                            System.out.println(result.success().get());
+                        }
+                    }
+                } else {
+                    // Run REPL
+                    runRepl();
+                }
                 break;
         }
 
         System.exit(rc);
+
     }
 
     /**
@@ -133,28 +161,36 @@ public class Main {
 
     private static void runRepl() {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        lox.eval.Interpreter interpreter = new lox.eval.Interpreter();
+        Interpreter interpreter = new Interpreter(false);
 
         System.out.print("> ");
         try {
             String line;
             while ((line = reader.readLine()) != null) {
-                var result = interpreter.evaluate(line, true);
-                
+                var result = interpreter.evaluate(line);
+
                 if (result.hasErr()) {
                     for (var error : result.error()) {
                         System.err.println(error);
                     }
                 }
-                
+
                 if (result.isOk()) {
                     System.out.println(((Optional) result.success()).get());
                 }
-                
+
                 System.out.print("> ");
             }
         } catch (IOException e) {
             System.err.println("Error reading input: " + e.getMessage());
+        }
+    }
+
+    private static int determineErrorCode(Stream<Throwable> exceptions) {
+        if (exceptions.anyMatch((t) -> t instanceof ParseException)) {
+            return ParseException.errorCode();
+        } else {
+            return EvalException.errorCode();
         }
     }
 }
