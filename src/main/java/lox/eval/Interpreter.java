@@ -13,22 +13,26 @@ import lox.parse.Expr;
 import lox.parse.Parser;
 import lox.parse.ParseException;
 import lox.parse.Stmt;
+import lox.parse.Ast.Var;
 import lox.token.DoubleToken;
 import lox.token.Token;
+import lox.token.IdentifierToken;
 import lox.token.Tokens.Lexemes;
 import lox.token.StringToken;
 import lox.token.ValueToken;
-import lox.util.LogUtil;
+
+import static lox.util.LogUtil.trace;
 
 public class Interpreter {
     private final boolean expressionMode;
+    private final EvalState state = new EvalState();
 
     public Interpreter(boolean expressionMode) {
         this.expressionMode = expressionMode;
     }
 
     public Result<Optional<EvaluationResult<?>>, List<Throwable>> evaluate(final CharSequence source) {
-        LogUtil.trace("evaluate: " + source);
+        trace("evaluate: " + source);
 
         var parser = new Parser(source, this.expressionMode).parse();
 
@@ -44,13 +48,14 @@ public class Interpreter {
     }
 
     private Optional<EvaluationResult<?>> eval(final List<Ast> tree, final List<Throwable> errors) {
-        LogUtil.trace("eval");
+        trace("eval");
         EvaluationResult result = null;
         for (var ast : tree) {
             try {
                 result = switch (ast) {
                     case Stmt s -> evalStatement(s);
                     case Expr e -> evalExpr(e);
+                    case Var v -> evalVarDecl(v);
                     default -> throw new NotImplementedException(ast.toString());
                 };
             } catch (ParseException e) {
@@ -66,13 +71,13 @@ public class Interpreter {
     }
 
     private EvaluationResult<?> evalStatement(Stmt ast) {
-        LogUtil.trace("evalStmt");
+        trace("evalStmt");
         return switch (ast) {
             case Stmt.PrintStmt s -> printStmt(s);
+            case Stmt.ExprStmt s -> exprStmt(s);
             case Stmt.IfStmt s -> throw new NotImplementedException(s.toString());
             case Stmt.ForStmt s -> throw new NotImplementedException(s.toString());
             case Stmt.WhileStmt s -> throw new NotImplementedException(s.toString());
-            case Stmt.ExprStmt s -> throw new NotImplementedException(s.toString());
             case Stmt.ReturnStmt s -> throw new NotImplementedException(s.toString());
         };
     }
@@ -82,8 +87,12 @@ public class Interpreter {
         return null;
     }
 
+    private EvaluationResult<?> exprStmt(Stmt.ExprStmt ast) {
+        return evalExpr(ast.expr());
+    }
+
     private EvaluationResult<?> evalExpr(Expr ast) {
-        LogUtil.trace("evalExpr");
+        trace("evalExpr");
         return switch (ast) {
             case Expr.Terminal t -> evalTerminal(t);
             case Expr.Group g -> evalExpr(g.group());
@@ -93,7 +102,7 @@ public class Interpreter {
     }
 
     private EvaluationResult<?> evalUnary(final Expr.Unary unary) {
-        LogUtil.trace("evalUnary");
+        trace("evalUnary");
         EvaluationResult<?> e = evalExpr(unary.expr());
         var token = unary.token();
         var lexeme = token.lexeme();
@@ -127,7 +136,7 @@ public class Interpreter {
     }
 
     private EvaluationResult<?> evalBinary(final Expr.Binary binary) {
-        LogUtil.trace("evalBinary");
+        trace("evalBinary");
         EvaluationResult<?> left = evalExpr(binary.left());
         EvaluationResult<?> right = evalExpr(binary.right());
         var lexeme = binary.op().lexeme();
@@ -231,21 +240,36 @@ public class Interpreter {
     }
 
     private EvaluationResult<?> evalTerminal(final Expr.Terminal terminal) {
-        LogUtil.trace("evalTerminal");
+        trace("evalTerminal");
         Token token = terminal.token();
         Lexemes lexeme = token.lexeme();
         var result = switch (lexeme) {
-            case NUMBER -> {
-                yield new DoubleResult(((DoubleToken) token).value());
-            }
+            case NUMBER -> new DoubleResult(((DoubleToken) token).value());
             case STRING -> new StringResult(((StringToken) token).value());
             case TRUE -> new BooleanResult(true);
             case FALSE -> new BooleanResult(false);
             case NIL -> new NilResult();
+            case IDENTIFIER -> {
+                var id = ((IdentifierToken) token).value();
+                var val = state.variable(id);
+                if (val == null) {
+                    throw new UndefinedVarException(id);
+                }
+
+                yield val;
+            }
             default -> throw new NotImplementedException(lexeme.toString());
         };
-        LogUtil.trace("evalTerminal result: " + result);
+        trace("evalTerminal result: " + result);
         return result;
     }
 
+    private EvaluationResult<?> evalVarDecl(Ast.Var varDecl) {
+        trace("evalVarDecl: " + varDecl.identifier());
+        Optional<Expr> initializer = varDecl.initializer();
+        state.addVariable(((IdentifierToken) varDecl.identifier()).value(),
+                initializer.isPresent() ? evalExpr(initializer.get()) : null);
+
+        return null;
+    }
 }

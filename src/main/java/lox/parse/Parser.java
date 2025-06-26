@@ -10,6 +10,7 @@ import java.util.Optional;
 import lox.LoxException;
 import lox.NotImplementedException;
 import lox.Result;
+import lox.parse.Ast.Var;
 import lox.token.Scanner;
 import lox.token.Token;
 import lox.token.Tokens.Lexemes;
@@ -59,7 +60,7 @@ public class Parser {
                 final var ast = switch (token.lexeme()) {
                     case CLASS -> throw new NotImplementedException(token.lexeme().name());
                     case FUN -> throw new NotImplementedException(token.lexeme().name());
-                    case VAR -> throw new NotImplementedException(token.lexeme().name());
+                    case VAR -> varDecl(tokens);
                     default -> this.expressionMode ? expression(tokens) : statement(tokens);
                 };
                 nodes.add(ast);
@@ -71,6 +72,30 @@ public class Parser {
         return new Result<>(nodes, errors);
     }
 
+    // varDecl → "var" IDENTIFIER ( "=" expression )? ";" ;
+    private Ast varDecl(final PeekableIterator<Token> tokens) {
+        trace("varDecl");
+        var varDecl = tokens.next(); // eat 'var' keyword
+        assert varDecl.lexeme() == Lexemes.VAR : "expected 'var' keyword";
+
+        final var idToken = tokens.nextIf((t) -> t.lexeme() == Lexemes.IDENTIFIER);
+        if (idToken.isPresent()) {
+            final var id = idToken.get();
+            Expr initializer = null;
+            if (tokens.nextIf((t) -> t.lexeme() == Lexemes.EQUAL).isPresent()) {
+                initializer = expression(tokens);
+            }
+
+            checkSemicolon(tokens);
+            trace("var " + id + " = " + initializer);
+            return new Ast.Var(id, initializer);
+        }
+
+        var exception = tokens.peek().isPresent() ? new UnexpectedTokenException(tokens.peek().get().toString())
+                : new UnexpectedEofException();
+        throw exception;
+    }
+
     private Ast statement(final PeekableIterator<Token> tokens) {
         trace("stmt");
         final var ast = switch (tokens.peek().get().lexeme()) {
@@ -80,10 +105,16 @@ public class Parser {
             case FOR -> forStmt(tokens);
             case IF -> ifStmt(tokens);
             case PRINT -> printStmt(tokens);
-            default -> expression(tokens);
+            default -> exprStmt(tokens);
         };
 
-        // check for an eat semicolon, or else error
+        checkSemicolon(tokens);
+
+        return ast;
+    }
+
+    // check for and eat semicolon, or else error
+    private void checkSemicolon(final PeekableIterator<Token> tokens) {
         tokens.nextIf((t) -> t.lexeme() == Lexemes.SEMICOLON)
                 .orElseThrow(() -> {
                     if (tokens.hasNext()) {
@@ -94,8 +125,6 @@ public class Parser {
                         return new UnexpectedEofException();
                     }
                 });
-
-        return ast;
     }
 
     private Expr expression(final PeekableIterator<Token> tokens) {
@@ -261,6 +290,15 @@ public class Parser {
         var printToken = tokens.next();
         if (tokens.hasNext()) {
             return new Stmt.PrintStmt(expression(tokens));
+        } else {
+            throw new UnexpectedEofException();
+        }
+    }
+
+    private Ast exprStmt(final PeekableIterator<Token> tokens) {
+        lox.util.LogUtil.trace("exprStmt");
+        if (tokens.hasNext()) {
+            return new Stmt.ExprStmt(expression(tokens));
         } else {
             throw new UnexpectedEofException();
         }

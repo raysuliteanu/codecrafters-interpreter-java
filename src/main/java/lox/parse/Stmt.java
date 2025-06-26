@@ -47,6 +47,16 @@ public abstract sealed class Stmt extends Ast {
     }
 
     public static final class ExprStmt extends Stmt {
+        private final Expr expr;
+
+        public ExprStmt(Expr expr) {
+            this.expr = expr;
+        }
+
+        public Expr expr() {
+            return expr;
+        }
+
         @Override
         public <T> T accept(AstVisitor<T> visitor) {
             return visitor.visitExprStmt(this);
