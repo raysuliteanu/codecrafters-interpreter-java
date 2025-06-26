@@ -89,11 +89,19 @@ public class AstPrinter implements AstVisitor<String> {
 
     @Override
     public String visitVar(Var var) {
-        throw new UnsupportedOperationException("Unimplemented method 'visitVar'");
+        var s = ((IdentifierToken) var.identifier()).value();
+        if (var.initializer().isPresent()) {
+            s += " = " + var.initializer();
+        }
+        return s;
     }
 
     @Override
     public String visitBlock(Block block) {
-        throw new UnsupportedOperationException("Unimplemented method 'visitBlock'");
+        final StringBuilder sb = new StringBuilder("{\n");
+        for (var ast : block.block()) {
+            sb.append(ast).append("\n");
+        }
+        return sb.append("}").toString();
     }
 }

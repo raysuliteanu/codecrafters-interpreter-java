@@ -11,12 +11,12 @@ import lox.LoxException;
 import lox.NotImplementedException;
 import lox.Result;
 import lox.parse.Ast.Var;
+import lox.token.IdentifierToken;
 import lox.token.Scanner;
 import lox.token.Token;
 import lox.token.Tokens.Lexemes;
 import lox.util.IterablePeekableIterator;
 import lox.util.PeekableIterator;
-import lox.util.UnexpectedEofException;
 
 public class Parser {
 
@@ -55,21 +55,33 @@ public class Parser {
         final var nodes = new ArrayList<Ast>();
         while (tokens.hasNext()) {
             try {
-                final var token = tokens.peek().get();
-                trace("next token: " + token);
-                final var ast = switch (token.lexeme()) {
-                    case VAR -> varDecl(tokens);
-                    case CLASS -> throw new NotImplementedException(token.lexeme().name());
-                    case FUN -> throw new NotImplementedException(token.lexeme().name());
-                    default -> this.expressionMode ? expression(tokens) : statement(tokens);
-                };
-                nodes.add(ast);
+                trace("next: " + tokens.peek().get());
+                nodes.add(declaration(tokens));
             } catch (LoxException e) {
                 errors.add(e);
             }
         }
 
         return new Result<>(nodes, errors);
+    }
+
+    private Ast declaration(final PeekableIterator<Token> tokens) {
+        trace("declaration");
+        final var token = tokens.peek().get();
+        return switch (token.lexeme()) {
+            case CLASS -> classDecl(tokens);
+            case FUN -> funDecl(tokens);
+            case VAR -> varDecl(tokens);
+            default -> this.expressionMode ? expression(tokens) : statement(tokens);
+        };
+    }
+
+    private Ast classDecl(final PeekableIterator<Token> tokens) {
+        throw new NotImplementedException("class");
+    }
+
+    private Ast funDecl(final PeekableIterator<Token> tokens) {
+        throw new NotImplementedException("fun");
     }
 
     // varDecl → "var" IDENTIFIER ( "=" expression )? ";" ;
@@ -87,7 +99,8 @@ public class Parser {
             }
 
             checkSemicolon(tokens);
-            trace("var " + id + " = " + initializer);
+
+            trace("var " + ((IdentifierToken) id).value() + " = " + initializer);
             return new Ast.Var(id, initializer);
         }
 
@@ -108,29 +121,15 @@ public class Parser {
             default -> exprStmt(tokens);
         };
 
-        checkSemicolon(tokens);
-
         return ast;
     }
 
-    // check for and eat semicolon, or else error
-    private void checkSemicolon(final PeekableIterator<Token> tokens) {
-        tokens.nextIf((t) -> t.lexeme() == Lexemes.SEMICOLON)
-                .orElseThrow(() -> {
-                    if (tokens.hasNext()) {
-                        return new MissingTokenException(
-                                Lexemes.SEMICOLON.value(),
-                                tokens.peek().get().lexeme().value());
-                    } else {
-                        return new UnexpectedEofException();
-                    }
-                });
-    }
-
     private Ast exprStmt(final PeekableIterator<Token> tokens) {
-        lox.util.LogUtil.trace("exprStmt");
+        trace("exprStmt");
         if (tokens.hasNext()) {
-            return new Stmt.ExprStmt(expression(tokens));
+            var expr = expression(tokens);
+            checkSemicolon(tokens);
+            return new Stmt.ExprStmt(expr);
         } else {
             throw new UnexpectedEofException();
         }
@@ -292,7 +291,41 @@ public class Parser {
     }
 
     private Ast block(final PeekableIterator<Token> tokens) {
-        throw new NotImplementedException("block statement");
+        trace("block start");
+        var _leftBrace = tokens.next();
+        assert _leftBrace.lexeme() == Lexemes.LEFT_BRACE;
+
+        final List<Ast> blockStatements = new ArrayList<>();
+        while (tokens.hasNext()) {
+            var ast = declaration(tokens);
+            blockStatements.add(ast);
+
+            if (!tokens.hasNext()) {
+                throw new UnexpectedEofException();
+            }
+
+            if (tokens.nextIf((t) -> t.lexeme() == Lexemes.RIGHT_BRACE).isPresent()) {
+                trace("block end");
+                break;
+            }
+        }
+
+        return new Ast.Block(blockStatements);
+    }
+
+    private Ast printStmt(final PeekableIterator<Token> tokens) {
+        trace("printStmt");
+
+        var _printToken = tokens.next();
+        assert _printToken.lexeme() == Lexemes.PRINT;
+
+        if (tokens.hasNext()) {
+            var expr = expression(tokens);
+            checkSemicolon(tokens);
+            return new Stmt.PrintStmt(expr);
+        } else {
+            throw new UnexpectedEofException();
+        }
     }
 
     private Ast whileStmt(final PeekableIterator<Token> tokens) {
@@ -300,6 +333,7 @@ public class Parser {
     }
 
     private Ast returnStmt(final PeekableIterator<Token> tokens) {
+        checkSemicolon(tokens);
         throw new NotImplementedException("return statement");
     }
 
@@ -311,13 +345,18 @@ public class Parser {
         throw new NotImplementedException("if statement");
     }
 
-    private Ast printStmt(final PeekableIterator<Token> tokens) {
-        lox.util.LogUtil.trace("printStmt");
-        var printToken = tokens.next();
-        if (tokens.hasNext()) {
-            return new Stmt.PrintStmt(expression(tokens));
-        } else {
-            throw new UnexpectedEofException();
-        }
+    // check for and eat semicolon, or else error
+    private void checkSemicolon(final PeekableIterator<Token> tokens) {
+        tokens.nextIf((t) -> t.lexeme() == Lexemes.SEMICOLON)
+                .orElseThrow(() -> {
+                    if (tokens.hasNext()) {
+                        return new MissingTokenException(
+                                Lexemes.SEMICOLON.value(),
+                                tokens.peek().get().lexeme().value());
+                    } else {
+                        return new UnexpectedEofException();
+                    }
+                });
     }
+
 }

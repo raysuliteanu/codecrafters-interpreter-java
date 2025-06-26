@@ -1,6 +1,7 @@
 package lox.parse;
 
 import java.util.Optional;
+import java.util.List;
 import lox.token.Token;
 
 public abstract sealed class Ast permits
@@ -15,14 +16,14 @@ public abstract sealed class Ast permits
         return PRINTER.print(this);
     }
 
-    public final class Clazz extends Ast {
+    public static final class Clazz extends Ast {
         @Override
         public <T> T accept(AstVisitor<T> visitor) {
             return visitor.visitClazz(this);
         }
     }
 
-    public final class Func extends Ast {
+    public static final class Func extends Ast {
         @Override
         public <T> T accept(AstVisitor<T> visitor) {
             return visitor.visitFunc(this);
@@ -56,7 +57,17 @@ public abstract sealed class Ast permits
         }
     }
 
-    public final class Block extends Ast {
+    public static final class Block extends Ast {
+        private final List<Ast> block;
+
+        public Block(final List<Ast> block) {
+            this.block = block;
+        }
+
+        public List<Ast> block() {
+            return block;
+        }
+
         @Override
         public <T> T accept(AstVisitor<T> visitor) {
             return visitor.visitBlock(this);

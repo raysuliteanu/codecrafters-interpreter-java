@@ -13,6 +13,7 @@ import lox.parse.Expr;
 import lox.parse.Parser;
 import lox.parse.ParseException;
 import lox.parse.Stmt;
+import lox.parse.Ast.Block;
 import lox.parse.Ast.Var;
 import lox.token.DoubleToken;
 import lox.token.Token;
@@ -52,12 +53,7 @@ public class Interpreter {
         EvaluationResult result = null;
         for (var ast : tree) {
             try {
-                result = switch (ast) {
-                    case Stmt s -> evalStatement(s);
-                    case Expr e -> evalExpr(e);
-                    case Var v -> evalVarDecl(v);
-                    default -> throw new NotImplementedException(ast.toString());
-                };
+                result = evalAst(ast);
             } catch (ParseException e) {
                 errors.add(e);
             } catch (EvalException e) {
@@ -67,10 +63,35 @@ public class Interpreter {
         }
 
         return Optional.ofNullable(result);
-
     }
 
-    private EvaluationResult<?> evalStatement(Stmt ast) {
+    private EvaluationResult<?> evalAst(final Ast ast) {
+        trace("evalAst");
+        return switch (ast) {
+            case Stmt s -> evalStatement(s);
+            case Expr e -> evalExpr(e);
+            case Var v -> evalVarDecl(v);
+            case Block b -> evalBlock(b);
+            default -> throw new NotImplementedException(ast.toString());
+        };
+    }
+
+    private EvaluationResult<?> evalBlock(final Block block) {
+        trace("evalBlock");
+        this.state.push();
+        EvaluationResult result = null;
+        try {
+            for (var s : block.block()) {
+                result = evalAst(s);
+            }
+        } finally {
+            this.state.pop();
+        }
+
+        return result;
+    }
+
+    private EvaluationResult<?> evalStatement(final Stmt ast) {
         trace("evalStmt");
         return switch (ast) {
             case Stmt.PrintStmt s -> printStmt(s);
