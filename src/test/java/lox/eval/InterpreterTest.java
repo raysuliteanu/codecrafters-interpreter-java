@@ -466,4 +466,204 @@ class InterpreterTest {
         DoubleResult doubleResult = (DoubleResult) result.success().get();
         assertThat(doubleResult.value()).isEqualTo(6.0);
     }
+
+    @Test
+    void shouldEvaluateIfStatementWithTrueBooleanCondition() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("var x = 0; if (true) x = 42; x;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        DoubleResult doubleResult = (DoubleResult) result.success().get();
+        assertThat(doubleResult.value()).isEqualTo(42.0);
+    }
+
+    @Test
+    void shouldEvaluateIfStatementWithFalseBooleanCondition() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("var x = 0; if (false) x = 42; x;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        DoubleResult doubleResult = (DoubleResult) result.success().get();
+        assertThat(doubleResult.value()).isEqualTo(0.0);
+    }
+
+    @Test
+    void shouldEvaluateIfElseStatementWithTrueCondition() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("var x = 0; if (true) x = 42; else x = 99; x;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        DoubleResult doubleResult = (DoubleResult) result.success().get();
+        assertThat(doubleResult.value()).isEqualTo(42.0);
+    }
+
+    @Test
+    void shouldEvaluateIfElseStatementWithFalseCondition() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("var x = 0; if (false) x = 42; else x = 99; x;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        DoubleResult doubleResult = (DoubleResult) result.success().get();
+        assertThat(doubleResult.value()).isEqualTo(99.0);
+    }
+
+    @Test
+    void shouldEvaluateIfStatementWithComparisonCondition() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("var x = 0; if (5 > 3) x = 42; x;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        DoubleResult doubleResult = (DoubleResult) result.success().get();
+        assertThat(doubleResult.value()).isEqualTo(42.0);
+    }
+
+    @Test
+    void shouldEvaluateIfStatementWithEqualityCondition() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("var x = 0; if (10 == 10) x = 42; x;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        DoubleResult doubleResult = (DoubleResult) result.success().get();
+        assertThat(doubleResult.value()).isEqualTo(42.0);
+    }
+
+    @Test
+    void shouldEvaluateIfStatementWithVariableCondition() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("var condition = true; var x = 0; if (condition) x = 42; x;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        DoubleResult doubleResult = (DoubleResult) result.success().get();
+        assertThat(doubleResult.value()).isEqualTo(42.0);
+    }
+
+    @Test
+    void shouldEvaluateIfStatementWithBlockStatement() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("var x = 0; if (true) { x = 42; var y = 10; x = x + y; } x;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        DoubleResult doubleResult = (DoubleResult) result.success().get();
+        assertThat(doubleResult.value()).isEqualTo(52.0);
+    }
+
+    @Test
+    void shouldEvaluateIfElseWithBlockStatements() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("var x = 0; if (false) { x = 42; } else { x = 99; var z = 1; x = x + z; } x;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        DoubleResult doubleResult = (DoubleResult) result.success().get();
+        assertThat(doubleResult.value()).isEqualTo(100.0);
+    }
+
+    @Test
+    void shouldEvaluateNestedIfStatements() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("var x = 0; if (true) if (true) x = 42; x;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        DoubleResult doubleResult = (DoubleResult) result.success().get();
+        assertThat(doubleResult.value()).isEqualTo(42.0);
+    }
+
+    @Test
+    void shouldEvaluateIfStatementWithScopedVariables() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("var x = 10; if (true) { var x = 20; } x;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        // Outer x should still be 10
+        DoubleResult doubleResult = (DoubleResult) result.success().get();
+        assertThat(doubleResult.value()).isEqualTo(10.0);
+    }
+
+    @Test
+    void shouldHandleIfStatementWithNonBooleanCondition() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("if (42) print \"hello\";");
+        
+        assertThat(result.hasErr()).isTrue();
+        assertThat(result.error()).isNotEmpty();
+        assertThat(result.error().get(0)).isInstanceOf(EvalException.class);
+    }
+
+    @Test
+    void shouldHandleIfStatementWithStringCondition() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("if (\"hello\") print \"world\";");
+        
+        assertThat(result.hasErr()).isTrue();
+        assertThat(result.error()).isNotEmpty();
+        assertThat(result.error().get(0)).isInstanceOf(EvalException.class);
+    }
+
+    @Test
+    void shouldHandleIfStatementWithNilCondition() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("if (nil) print \"world\";");
+        
+        assertThat(result.hasErr()).isTrue();
+        assertThat(result.error()).isNotEmpty();
+        assertThat(result.error().get(0)).isInstanceOf(EvalException.class);
+    }
+
+    @Test
+    void shouldEvaluateIfStatementReturningFromThenBranch() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("if (true) 42; else 99;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        DoubleResult doubleResult = (DoubleResult) result.success().get();
+        assertThat(doubleResult.value()).isEqualTo(42.0);
+    }
+
+    @Test
+    void shouldEvaluateIfStatementReturningFromElseBranch() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("if (false) 42; else 99;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        DoubleResult doubleResult = (DoubleResult) result.success().get();
+        assertThat(doubleResult.value()).isEqualTo(99.0);
+    }
+
+    @Test
+    void shouldEvaluateIfStatementWithoutElseReturningNull() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("if (false) 42;");
+        
+        assertThat(result.hasErr()).isFalse();
+        assertThat(result.success()).isEmpty(); // if without else that doesn't execute returns null
+    }
 }

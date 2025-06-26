@@ -94,13 +94,43 @@ public class Interpreter {
     private EvaluationResult<?> evalStatement(final Stmt ast) {
         trace("evalStmt");
         return switch (ast) {
-            case Stmt.PrintStmt s -> printStmt(s);
-            case Stmt.ExprStmt s -> exprStmt(s);
-            case Stmt.IfStmt s -> throw new NotImplementedException(s.toString());
+            case Stmt.PrintStmt p -> printStmt(p);
+            case Stmt.ExprStmt e -> exprStmt(e);
+            case Stmt.IfStmt i -> ifStmt(i);
             case Stmt.ForStmt s -> throw new NotImplementedException(s.toString());
             case Stmt.WhileStmt s -> throw new NotImplementedException(s.toString());
             case Stmt.ReturnStmt s -> throw new NotImplementedException(s.toString());
         };
+    }
+
+    private EvaluationResult<?> ifStmt(Stmt.IfStmt ast) {
+        trace("ifStmt");
+        var cond = evalExpr(ast.condition());
+        if (cond instanceof BooleanResult br) {
+            trace("if cond is " + cond);
+            if (br.value()) {
+                trace("then branch");
+                return switch (ast.thenStmt()) {
+                    case Stmt s -> evalStatement(s);
+                    case Ast.Block b -> evalBlock(b);
+                    default -> throw new EvalException("todo: then block not stmt or block");
+                };
+            }
+
+            if (ast.elseStmt().isPresent()) {
+                trace("else branch");
+                var elseStmt = ast.elseStmt().get();
+                return switch (elseStmt) {
+                    case Stmt s -> evalStatement(s);
+                    case Ast.Block b -> evalBlock(b);
+                    default -> throw new EvalException("todo: else block not stmt or block");
+                };
+            }
+
+            return null;
+        }
+
+        throw new EvalException(cond.getClass().getName() + ": " + cond);
     }
 
     private EvaluationResult<?> printStmt(Stmt.PrintStmt ast) {

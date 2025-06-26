@@ -5,6 +5,7 @@ import static lox.util.LogUtil.trace;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import lox.LoxException;
@@ -67,13 +68,17 @@ public class Parser {
 
     private Ast declaration(final PeekableIterator<Token> tokens) {
         trace("declaration");
-        final var token = tokens.peek().get();
-        return switch (token.lexeme()) {
-            case CLASS -> classDecl(tokens);
-            case FUN -> funDecl(tokens);
-            case VAR -> varDecl(tokens);
-            default -> this.expressionMode ? expression(tokens) : statement(tokens);
-        };
+        try {
+            final var token = tokens.peek().get();
+            return switch (token.lexeme()) {
+                case CLASS -> classDecl(tokens);
+                case FUN -> funDecl(tokens);
+                case VAR -> varDecl(tokens);
+                default -> this.expressionMode ? expression(tokens) : statement(tokens);
+            };
+        } catch (NoSuchElementException e) {
+            throw new UnexpectedEofException();
+        }
     }
 
     private Ast classDecl(final PeekableIterator<Token> tokens) {
@@ -328,6 +333,26 @@ public class Parser {
         }
     }
 
+    private Ast ifStmt(final PeekableIterator<Token> tokens) {
+        trace("ifStmt");
+        var _ifToken = tokens.next();
+        assert _ifToken.lexeme() == Lexemes.IF;
+
+        if (tokens.hasNext()) {
+            var cond = expression(tokens);
+            var thenStmt = statement(tokens);
+            Ast elseStmt = null;
+            var token = tokens.nextIf((t) -> t.lexeme() == Lexemes.ELSE);
+            if (token.isPresent()) {
+                elseStmt = statement(tokens);
+            }
+
+            return new Stmt.IfStmt(cond, thenStmt, elseStmt);
+        } else {
+            throw new UnexpectedEofException();
+        }
+    }
+
     private Ast whileStmt(final PeekableIterator<Token> tokens) {
         throw new NotImplementedException("while statement");
     }
@@ -339,10 +364,6 @@ public class Parser {
 
     private Ast forStmt(final PeekableIterator<Token> tokens) {
         throw new NotImplementedException("for statement");
-    }
-
-    private Ast ifStmt(final PeekableIterator<Token> tokens) {
-        throw new NotImplementedException("if statement");
     }
 
     // check for and eat semicolon, or else error

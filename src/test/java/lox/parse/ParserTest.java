@@ -18,6 +18,7 @@ import lox.parse.Expr.Group;
 import lox.parse.Expr.Assignment;
 import lox.parse.Stmt.PrintStmt;
 import lox.parse.Stmt.ExprStmt;
+import lox.parse.Stmt.IfStmt;
 import lox.NotImplementedException;
 
 class ParserTest {
@@ -522,5 +523,159 @@ class ParserTest {
         assertThat(outerAssignment.identifier().lexeme()).isEqualTo(Lexemes.IDENTIFIER);
         assertThat(innerAssignment.identifier().lexeme()).isEqualTo(Lexemes.IDENTIFIER);
         assertThat(innerAssignment.expression()).isInstanceOf(Terminal.class);
+    }
+
+    @Test
+    void shouldParseIfStatement() {
+        Parser parser = new Parser("if (true) print 42;", false);
+
+        var result = parser.parse();
+
+        assertThat(result.isOk()).isTrue();
+        assertThat(result.success()).hasSize(1);
+
+        Ast ast = result.success().get(0);
+        assertThat(ast).isInstanceOf(IfStmt.class);
+
+        IfStmt ifStmt = (IfStmt) ast;
+        assertThat(ifStmt.condition()).isInstanceOf(Group.class);
+        assertThat(ifStmt.thenStmt()).isInstanceOf(PrintStmt.class);
+        assertThat(ifStmt.elseStmt()).isEmpty();
+
+        Group conditionGroup = (Group) ifStmt.condition();
+        Terminal condition = (Terminal) conditionGroup.group();
+        assertThat(condition.token().lexeme()).isEqualTo(Lexemes.TRUE);
+    }
+
+    @Test
+    void shouldParseIfElseStatement() {
+        Parser parser = new Parser("if (false) print 1; else print 2;", false);
+
+        var result = parser.parse();
+
+        assertThat(result.isOk()).isTrue();
+        assertThat(result.success()).hasSize(1);
+
+        Ast ast = result.success().get(0);
+        assertThat(ast).isInstanceOf(IfStmt.class);
+
+        IfStmt ifStmt = (IfStmt) ast;
+        assertThat(ifStmt.condition()).isInstanceOf(Group.class);
+        assertThat(ifStmt.thenStmt()).isInstanceOf(PrintStmt.class);
+        assertThat(ifStmt.elseStmt()).isPresent();
+        assertThat(ifStmt.elseStmt().get()).isInstanceOf(PrintStmt.class);
+
+        Group conditionGroup = (Group) ifStmt.condition();
+        Terminal condition = (Terminal) conditionGroup.group();
+        assertThat(condition.token().lexeme()).isEqualTo(Lexemes.FALSE);
+    }
+
+    @Test
+    void shouldParseIfWithBlockStatement() {
+        Parser parser = new Parser("if (true) { print 42; }", false);
+
+        var result = parser.parse();
+
+        assertThat(result.isOk()).isTrue();
+        assertThat(result.success()).hasSize(1);
+
+        Ast ast = result.success().get(0);
+        assertThat(ast).isInstanceOf(IfStmt.class);
+
+        IfStmt ifStmt = (IfStmt) ast;
+        assertThat(ifStmt.condition()).isInstanceOf(Group.class);
+        assertThat(ifStmt.thenStmt()).isInstanceOf(Block.class);
+        assertThat(ifStmt.elseStmt()).isEmpty();
+
+        Block thenBlock = (Block) ifStmt.thenStmt();
+        assertThat(thenBlock.block()).hasSize(1);
+        assertThat(thenBlock.block().get(0)).isInstanceOf(PrintStmt.class);
+    }
+
+    @Test
+    void shouldParseIfElseWithBlockStatements() {
+        Parser parser = new Parser("if (x > 0) { print \"positive\"; } else { print \"negative\"; }", false);
+
+        var result = parser.parse();
+
+        assertThat(result.isOk()).isTrue();
+        assertThat(result.success()).hasSize(1);
+
+        Ast ast = result.success().get(0);
+        assertThat(ast).isInstanceOf(IfStmt.class);
+
+        IfStmt ifStmt = (IfStmt) ast;
+        assertThat(ifStmt.condition()).isInstanceOf(Group.class);
+        assertThat(ifStmt.thenStmt()).isInstanceOf(Block.class);
+        assertThat(ifStmt.elseStmt()).isPresent();
+        assertThat(ifStmt.elseStmt().get()).isInstanceOf(Block.class);
+
+        Group conditionGroup = (Group) ifStmt.condition();
+        Binary condition = (Binary) conditionGroup.group();
+        assertThat(condition.op().lexeme()).isEqualTo(Lexemes.GREATER);
+    }
+
+    @Test
+    void shouldParseNestedIfStatements() {
+        Parser parser = new Parser("if (x > 0) if (y > 0) print \"both positive\";", false);
+
+        var result = parser.parse();
+
+        assertThat(result.isOk()).isTrue();
+        assertThat(result.success()).hasSize(1);
+
+        Ast ast = result.success().get(0);
+        assertThat(ast).isInstanceOf(IfStmt.class);
+
+        IfStmt outerIf = (IfStmt) ast;
+        assertThat(outerIf.condition()).isInstanceOf(Group.class);
+        assertThat(outerIf.thenStmt()).isInstanceOf(IfStmt.class);
+        assertThat(outerIf.elseStmt()).isEmpty();
+
+        IfStmt innerIf = (IfStmt) outerIf.thenStmt();
+        assertThat(innerIf.condition()).isInstanceOf(Group.class);
+        assertThat(innerIf.thenStmt()).isInstanceOf(PrintStmt.class);
+        assertThat(innerIf.elseStmt()).isEmpty();
+    }
+
+    @Test
+    void shouldParseComplexIfCondition() {
+        Parser parser = new Parser("if (x == 5) print \"equal\";", false);
+
+        var result = parser.parse();
+
+        assertThat(result.isOk()).isTrue();
+        assertThat(result.success()).hasSize(1);
+
+        Ast ast = result.success().get(0);
+        assertThat(ast).isInstanceOf(IfStmt.class);
+
+        IfStmt ifStmt = (IfStmt) ast;
+        assertThat(ifStmt.condition()).isInstanceOf(Group.class);
+        assertThat(ifStmt.thenStmt()).isInstanceOf(PrintStmt.class);
+
+        Group conditionGroup = (Group) ifStmt.condition();
+        Binary condition = (Binary) conditionGroup.group();
+        assertThat(condition.op().lexeme()).isEqualTo(Lexemes.EQUAL_EQUAL);
+    }
+
+    @Test
+    void shouldHandleIfStatementWithMissingCondition() {
+        Parser parser = new Parser("if print 42;", false);
+
+        var result = parser.parse();
+
+        assertThat(result.hasErr()).isTrue();
+        assertThat(result.error()).isNotEmpty();
+    }
+
+    @Test
+    void shouldHandleIfStatementWithMissingThen() {
+        Parser parser = new Parser("if (true)", false);
+
+        var result = parser.parse();
+
+        assertThat(result.hasErr()).isTrue();
+        assertThat(result.error()).isNotEmpty();
     }
 }
