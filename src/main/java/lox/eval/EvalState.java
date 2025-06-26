@@ -1,6 +1,7 @@
 package lox.eval;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
@@ -28,10 +29,10 @@ public class EvalState {
             }
         }
 
-        return null;
+        throw new UndefinedVarException(varName);
     }
 
     public void addVariable(final String name, final EvaluationResult<?> value) {
-        state.getFirst().put(name, value);
+        state.getFirst().put(name, value != null ? value : new NilResult());
     }
 }

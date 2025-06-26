@@ -251,12 +251,7 @@ public class Interpreter {
             case NIL -> new NilResult();
             case IDENTIFIER -> {
                 var id = ((IdentifierToken) token).value();
-                var val = state.variable(id);
-                if (val == null) {
-                    throw new UndefinedVarException(id);
-                }
-
-                yield val;
+                yield state.variable(id);
             }
             default -> throw new NotImplementedException(lexeme.toString());
         };
