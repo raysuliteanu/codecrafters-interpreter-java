@@ -127,7 +127,7 @@ public class Interpreter {
         var id = ((IdentifierToken) assignment.identifier()).value();
         var val = evalExpr(assignment.expression());
 
-        this.state.addVariable(id, val);
+        this.state.updateVariable(id, val);
 
         return val;
     }

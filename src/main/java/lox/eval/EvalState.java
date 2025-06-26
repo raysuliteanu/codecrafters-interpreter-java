@@ -32,6 +32,16 @@ public class EvalState {
         throw new UndefinedVarException(varName);
     }
 
+    public EvaluationResult<?> updateVariable(final String name, final EvaluationResult<?> value) {
+        for (var context : state) {
+            if (context.containsKey(name)) {
+                return context.replace(name, value);
+            }
+        }
+
+        throw new UndefinedVarException(name);
+    }
+
     public void addVariable(final String name, final EvaluationResult<?> value) {
         state.getFirst().put(name, value != null ? value : new NilResult());
     }
