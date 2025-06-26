@@ -12,31 +12,33 @@ import lox.parse.Stmt.ReturnStmt;
 import lox.parse.Stmt.WhileStmt;
 
 public interface AstVisitor<T> {
-  T visitTerminal(Expr.Terminal expr);
+    T visitTerminal(Expr.Terminal expr);
 
-  T visitGroup(Expr.Group expr);
+    T visitGroup(Expr.Group expr);
 
-  T visitUnary(Expr.Unary expr);
+    T visitUnary(Expr.Unary expr);
 
-  T visitBinary(Expr.Binary expr);
+    T visitBinary(Expr.Binary expr);
 
-  T visitExprStmt(ExprStmt exprStmt);
+    T visitAssignment(Expr.Assignment expr);
 
-  T visitPrintStmt(PrintStmt printStmt);
+    T visitExprStmt(ExprStmt exprStmt);
 
-  T visitReturnStmt(ReturnStmt returnStmt);
+    T visitPrintStmt(PrintStmt printStmt);
 
-  T visitWhileStmt(WhileStmt whileStmt);
+    T visitReturnStmt(ReturnStmt returnStmt);
 
-  T visitForStmt(ForStmt forStmt);
+    T visitWhileStmt(WhileStmt whileStmt);
 
-  T visitIfStmt(IfStmt ifStmt);
+    T visitForStmt(ForStmt forStmt);
 
-  T visitClazz(Clazz clazz);
+    T visitIfStmt(IfStmt ifStmt);
 
-  T visitFunc(Func func);
+    T visitClazz(Clazz clazz);
 
-  T visitVar(Var var);
+    T visitFunc(Func func);
 
-  T visitBlock(Block block);
+    T visitVar(Var var);
+
+    T visitBlock(Block block);
 }

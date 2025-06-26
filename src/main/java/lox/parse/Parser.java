@@ -58,9 +58,9 @@ public class Parser {
                 final var token = tokens.peek().get();
                 trace("next token: " + token);
                 final var ast = switch (token.lexeme()) {
+                    case VAR -> varDecl(tokens);
                     case CLASS -> throw new NotImplementedException(token.lexeme().name());
                     case FUN -> throw new NotImplementedException(token.lexeme().name());
-                    case VAR -> varDecl(tokens);
                     default -> this.expressionMode ? expression(tokens) : statement(tokens);
                 };
                 nodes.add(ast);
@@ -127,9 +127,35 @@ public class Parser {
                 });
     }
 
+    private Ast exprStmt(final PeekableIterator<Token> tokens) {
+        lox.util.LogUtil.trace("exprStmt");
+        if (tokens.hasNext()) {
+            return new Stmt.ExprStmt(expression(tokens));
+        } else {
+            throw new UnexpectedEofException();
+        }
+    }
+
     private Expr expression(final PeekableIterator<Token> tokens) {
         trace("expression");
-        return equality(tokens);
+        return assignment(tokens);
+    }
+
+    private Expr assignment(final PeekableIterator<Token> tokens) {
+        trace("assignment");
+
+        // save in case token actually represents an lvalue
+        var token = tokens.peek();
+
+        var left = equality(tokens);
+
+        if (tokens.nextIf((t) -> t.lexeme() == Lexemes.EQUAL).isPresent()) {
+            // assignment: lvalue = rvalue
+            var rvalue = assignment(tokens);
+            return new Expr.Assignment(token.get(), rvalue);
+        }
+
+        return left;
     }
 
     private Expr equality(final PeekableIterator<Token> tokens) {
@@ -290,15 +316,6 @@ public class Parser {
         var printToken = tokens.next();
         if (tokens.hasNext()) {
             return new Stmt.PrintStmt(expression(tokens));
-        } else {
-            throw new UnexpectedEofException();
-        }
-    }
-
-    private Ast exprStmt(final PeekableIterator<Token> tokens) {
-        lox.util.LogUtil.trace("exprStmt");
-        if (tokens.hasNext()) {
-            return new Stmt.ExprStmt(expression(tokens));
         } else {
             throw new UnexpectedEofException();
         }

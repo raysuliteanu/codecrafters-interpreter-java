@@ -98,7 +98,17 @@ public class Interpreter {
             case Expr.Group g -> evalExpr(g.group());
             case Expr.Unary u -> evalUnary(u);
             case Expr.Binary b -> evalBinary(b);
+            case Expr.Assignment a -> evalAssignment(a);
         };
+    }
+
+    private EvaluationResult<?> evalAssignment(final Expr.Assignment assignment) {
+        var id = ((IdentifierToken) assignment.identifier()).value();
+        var val = evalExpr(assignment.expression());
+
+        this.state.addVariable(id, val);
+
+        return val;
     }
 
     private EvaluationResult<?> evalUnary(final Expr.Unary unary) {

@@ -10,6 +10,7 @@ import lox.parse.Stmt.IfStmt;
 import lox.parse.Stmt.PrintStmt;
 import lox.parse.Stmt.ReturnStmt;
 import lox.parse.Stmt.WhileStmt;
+import lox.token.IdentifierToken;
 
 public class AstPrinter implements AstVisitor<String> {
 
@@ -39,6 +40,11 @@ public class AstPrinter implements AstVisitor<String> {
     @Override
     public String visitBinary(Expr.Binary expr) {
         return "(" + expr.op().lexeme().value() + " " + expr.left() + " " + expr.right() + ")";
+    }
+
+    @Override
+    public String visitAssignment(Expr.Assignment expr) {
+        return ((IdentifierToken) expr.identifier()).value() + " = " + expr.expression();
     }
 
     @Override
