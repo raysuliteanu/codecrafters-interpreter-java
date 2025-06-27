@@ -7,7 +7,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-
 import lox.LoxException;
 import lox.NotImplementedException;
 import lox.Result;
@@ -52,7 +51,9 @@ public class Parser {
         return new Result<>(ast, errors);
     }
 
-    private Result<List<Ast>, List<Throwable>> program(final PeekableIterator<Token> tokens, List<Throwable> errors) {
+    private Result<List<Ast>, List<Throwable>> program(
+            final PeekableIterator<Token> tokens,
+            List<Throwable> errors) {
         final var nodes = new ArrayList<Ast>();
         while (tokens.hasNext()) {
             try {
@@ -74,7 +75,9 @@ public class Parser {
                 case CLASS -> classDecl(tokens);
                 case FUN -> funDecl(tokens);
                 case VAR -> varDecl(tokens);
-                default -> this.expressionMode ? expression(tokens) : statement(tokens);
+                default -> this.expressionMode
+                        ? expression(tokens)
+                        : statement(tokens);
             };
         } catch (NoSuchElementException e) {
             throw new UnexpectedEofException();
@@ -95,21 +98,24 @@ public class Parser {
         var varDecl = tokens.next(); // eat 'var' keyword
         assert varDecl.lexeme() == Lexemes.VAR : "expected 'var' keyword";
 
-        final var idToken = tokens.nextIf((t) -> t.lexeme() == Lexemes.IDENTIFIER);
+        final var idToken = tokens.nextIf(
+                t -> t.lexeme() == Lexemes.IDENTIFIER);
         if (idToken.isPresent()) {
             final var id = idToken.get();
             Expr initializer = null;
-            if (tokens.nextIf((t) -> t.lexeme() == Lexemes.EQUAL).isPresent()) {
+            if (tokens.nextIf(t -> t.lexeme() == Lexemes.EQUAL).isPresent()) {
                 initializer = expression(tokens);
             }
 
             checkSemicolon(tokens);
 
-            trace("var " + ((IdentifierToken) id).value() + " = " + initializer);
+            trace(
+                    "var " + ((IdentifierToken) id).value() + " = " + initializer);
             return new Ast.Var(id, initializer);
         }
 
-        var exception = tokens.peek().isPresent() ? new UnexpectedTokenException(tokens.peek().get().toString())
+        var exception = tokens.peek().isPresent()
+                ? new UnexpectedTokenException(tokens.peek().get().toString())
                 : new UnexpectedEofException();
         throw exception;
     }
@@ -151,12 +157,46 @@ public class Parser {
         // save in case token actually represents an lvalue
         var token = tokens.peek();
 
-        var left = equality(tokens);
+        var left = logical_or(tokens);
 
-        if (tokens.nextIf((t) -> t.lexeme() == Lexemes.EQUAL).isPresent()) {
+        if (tokens.nextIf(t -> t.lexeme() == Lexemes.EQUAL).isPresent()) {
             // assignment: lvalue = rvalue
             var rvalue = assignment(tokens);
             return new Expr.Assignment(token.get(), rvalue);
+        }
+
+        return left;
+    }
+
+    private Expr logical_or(final PeekableIterator<Token> tokens) {
+        trace("logical_or");
+        var left = logical_and(tokens);
+        while (tokens.hasNext()) {
+            var node = tokens.nextIf(t -> t.lexeme() == Lexemes.OR);
+            if (node.isPresent()) {
+                var op = node.get();
+                var right = logical_and(tokens);
+                left = new Expr.Logical(left, op, right);
+            } else {
+                break;
+            }
+        }
+
+        return left;
+    }
+
+    private Expr logical_and(final PeekableIterator<Token> tokens) {
+        trace("logical_and");
+        var left = equality(tokens);
+        while (tokens.hasNext()) {
+            var node = tokens.nextIf(t -> t.lexeme() == Lexemes.AND);
+            if (node.isPresent()) {
+                var op = node.get();
+                var right = equality(tokens);
+                left = new Expr.Logical(left, op, right);
+            } else {
+                break;
+            }
         }
 
         return left;
@@ -167,8 +207,9 @@ public class Parser {
         var ast = comparison(tokens);
 
         while (tokens.hasNext()) {
-            final var node = tokens
-                    .nextIf((t) -> t.lexeme() == Lexemes.BANG_EQUAL || t.lexeme() == Lexemes.EQUAL_EQUAL);
+            final var node = tokens.nextIf(
+                    t -> t.lexeme() == Lexemes.BANG_EQUAL ||
+                            t.lexeme() == Lexemes.EQUAL_EQUAL);
             if (node.isPresent()) {
                 final var op = node.get();
                 final var rhs = comparison(tokens);
@@ -186,10 +227,11 @@ public class Parser {
         var ast = term(tokens);
 
         while (tokens.hasNext()) {
-            final var node = tokens.nextIf((t) -> t.lexeme() == Lexemes.GREATER ||
-                    t.lexeme() == Lexemes.GREATER_EQUAL ||
-                    t.lexeme() == Lexemes.LESS_EQUAL ||
-                    t.lexeme() == Lexemes.LESS);
+            final var node = tokens.nextIf(
+                    t -> t.lexeme() == Lexemes.GREATER ||
+                            t.lexeme() == Lexemes.GREATER_EQUAL ||
+                            t.lexeme() == Lexemes.LESS_EQUAL ||
+                            t.lexeme() == Lexemes.LESS);
             if (node.isPresent()) {
                 final var op = node.get();
                 final var rhs = term(tokens);
@@ -207,7 +249,8 @@ public class Parser {
         var ast = factor(tokens);
 
         while (tokens.hasNext()) {
-            final var node = tokens.nextIf((t) -> t.lexeme() == Lexemes.PLUS || t.lexeme() == Lexemes.MINUS);
+            final var node = tokens.nextIf(
+                    t -> t.lexeme() == Lexemes.PLUS || t.lexeme() == Lexemes.MINUS);
 
             if (node.isPresent()) {
                 final var op = node.get();
@@ -227,7 +270,8 @@ public class Parser {
         var ast = unary(tokens);
 
         while (tokens.hasNext()) {
-            final var node = tokens.nextIf((t) -> t.lexeme() == Lexemes.STAR || t.lexeme() == Lexemes.SLASH);
+            final var node = tokens.nextIf(
+                    t -> t.lexeme() == Lexemes.STAR || t.lexeme() == Lexemes.SLASH);
 
             if (node.isPresent()) {
                 final var op = node.get();
@@ -243,7 +287,9 @@ public class Parser {
 
     private Expr unary(final PeekableIterator<Token> tokens) {
         trace("unary");
-        var e = switch (tokens.nextIf((t) -> t.lexeme() == Lexemes.BANG || t.lexeme() == Lexemes.MINUS)) {
+        var e = switch (tokens.nextIf(
+                t -> t.lexeme() == Lexemes.BANG ||
+                        t.lexeme() == Lexemes.MINUS)) {
             case Optional<Token> o when o.isPresent() -> {
                 final var op = o.get();
                 final Expr expr = unary(tokens);
@@ -260,32 +306,37 @@ public class Parser {
 
     private Expr primary(final PeekableIterator<Token> tokens) {
         trace("primary");
-        var token = tokens
-                .nextIf((t) -> t.lexeme() == Lexemes.TRUE || t.lexeme() == Lexemes.FALSE || t.lexeme() == Lexemes.NIL);
+        var token = tokens.nextIf(
+                t -> t.lexeme() == Lexemes.TRUE ||
+                        t.lexeme() == Lexemes.FALSE ||
+                        t.lexeme() == Lexemes.NIL);
 
         if (token.isPresent()) {
             return new Expr.Terminal(token.get());
         }
 
-        token = tokens.nextIf((t) -> t.lexeme() == Lexemes.LEFT_PAREN);
+        token = tokens.nextIf(t -> t.lexeme() == Lexemes.LEFT_PAREN);
         if (token.isPresent()) {
             // start of group expression i.e. '(' expr ')'
             trace("start group expr");
             var expr = expression(tokens);
-            token = tokens.nextIf((t) -> t.lexeme() == Lexemes.RIGHT_PAREN);
+            token = tokens.nextIf(t -> t.lexeme() == Lexemes.RIGHT_PAREN);
             if (token.isPresent()) {
                 trace("end group expr");
                 return new Expr.Group(expr);
             } else if (tokens.hasNext()) {
-                throw new MissingTokenException(")", tokens.peek().get().lexeme().value());
+                throw new MissingTokenException(
+                        ")",
+                        tokens.peek().get().lexeme().value());
             } else {
                 throw new UnexpectedEofException();
             }
         }
 
         token = tokens.nextIf(
-                (t) -> t.lexeme() == Lexemes.NUMBER || t.lexeme() == Lexemes.STRING
-                        || t.lexeme() == Lexemes.IDENTIFIER);
+                t -> t.lexeme() == Lexemes.NUMBER ||
+                        t.lexeme() == Lexemes.STRING ||
+                        t.lexeme() == Lexemes.IDENTIFIER);
         if (token.isPresent()) {
             return new Expr.Terminal(token.get());
         } else if (tokens.hasNext()) {
@@ -309,7 +360,9 @@ public class Parser {
                 throw new UnexpectedEofException();
             }
 
-            if (tokens.nextIf((t) -> t.lexeme() == Lexemes.RIGHT_BRACE).isPresent()) {
+            if (tokens
+                    .nextIf(t -> t.lexeme() == Lexemes.RIGHT_BRACE)
+                    .isPresent()) {
                 trace("block end");
                 break;
             }
@@ -342,7 +395,7 @@ public class Parser {
             var cond = expression(tokens);
             var thenStmt = statement(tokens);
             Ast elseStmt = null;
-            var token = tokens.nextIf((t) -> t.lexeme() == Lexemes.ELSE);
+            var token = tokens.nextIf(t -> t.lexeme() == Lexemes.ELSE);
             if (token.isPresent()) {
                 elseStmt = statement(tokens);
             }
@@ -368,7 +421,9 @@ public class Parser {
 
     // check for and eat semicolon, or else error
     private void checkSemicolon(final PeekableIterator<Token> tokens) {
-        tokens.nextIf((t) -> t.lexeme() == Lexemes.SEMICOLON)
+        trace("check semicolon");
+        tokens
+                .nextIf(t -> t.lexeme() == Lexemes.SEMICOLON)
                 .orElseThrow(() -> {
                     if (tokens.hasNext()) {
                         return new MissingTokenException(
@@ -379,5 +434,4 @@ public class Parser {
                     }
                 });
     }
-
 }

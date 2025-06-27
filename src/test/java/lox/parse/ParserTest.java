@@ -16,6 +16,7 @@ import lox.parse.Expr.Binary;
 import lox.parse.Expr.Unary;
 import lox.parse.Expr.Group;
 import lox.parse.Expr.Assignment;
+import lox.parse.Expr.Logical;
 import lox.parse.Stmt.PrintStmt;
 import lox.parse.Stmt.ExprStmt;
 import lox.parse.Stmt.IfStmt;
@@ -677,5 +678,211 @@ class ParserTest {
 
         assertThat(result.hasErr()).isTrue();
         assertThat(result.error()).isNotEmpty();
+    }
+
+    @Test
+    void shouldParseLogicalAndExpression() {
+        Parser parser = new Parser("true and false;", false);
+
+        var result = parser.parse();
+
+        assertThat(result.isOk()).isTrue();
+        assertThat(result.success()).hasSize(1);
+
+        ExprStmt exprStmt = (ExprStmt) result.success().get(0);
+        assertThat(exprStmt.expr()).isInstanceOf(Logical.class);
+
+        Logical logical = (Logical) exprStmt.expr();
+        assertThat(logical.op().lexeme()).isEqualTo(Lexemes.AND);
+        assertThat(logical.left()).isInstanceOf(Terminal.class);
+        assertThat(logical.right()).isInstanceOf(Terminal.class);
+
+        Terminal left = (Terminal) logical.left();
+        Terminal right = (Terminal) logical.right();
+        assertThat(left.token().lexeme()).isEqualTo(Lexemes.TRUE);
+        assertThat(right.token().lexeme()).isEqualTo(Lexemes.FALSE);
+    }
+
+    @Test
+    void shouldParseLogicalOrExpression() {
+        Parser parser = new Parser("false or true;", false);
+
+        var result = parser.parse();
+
+        assertThat(result.isOk()).isTrue();
+        assertThat(result.success()).hasSize(1);
+
+        ExprStmt exprStmt = (ExprStmt) result.success().get(0);
+        assertThat(exprStmt.expr()).isInstanceOf(Logical.class);
+
+        Logical logical = (Logical) exprStmt.expr();
+        assertThat(logical.op().lexeme()).isEqualTo(Lexemes.OR);
+        assertThat(logical.left()).isInstanceOf(Terminal.class);
+        assertThat(logical.right()).isInstanceOf(Terminal.class);
+
+        Terminal left = (Terminal) logical.left();
+        Terminal right = (Terminal) logical.right();
+        assertThat(left.token().lexeme()).isEqualTo(Lexemes.FALSE);
+        assertThat(right.token().lexeme()).isEqualTo(Lexemes.TRUE);
+    }
+
+    @Test
+    void shouldParseChainedLogicalExpressions() {
+        Parser parser = new Parser("true and false or true;", false);
+
+        var result = parser.parse();
+
+        assertThat(result.isOk()).isTrue();
+        assertThat(result.success()).hasSize(1);
+
+        // Should parse as (true and false) or true due to precedence
+        ExprStmt exprStmt = (ExprStmt) result.success().get(0);
+        assertThat(exprStmt.expr()).isInstanceOf(Logical.class);
+
+        Logical outerOr = (Logical) exprStmt.expr();
+        assertThat(outerOr.op().lexeme()).isEqualTo(Lexemes.OR);
+        assertThat(outerOr.left()).isInstanceOf(Logical.class);
+        assertThat(outerOr.right()).isInstanceOf(Terminal.class);
+
+        Logical innerAnd = (Logical) outerOr.left();
+        assertThat(innerAnd.op().lexeme()).isEqualTo(Lexemes.AND);
+    }
+
+    @Test
+    void shouldParseLogicalExpressionsWithParentheses() {
+        Parser parser = new Parser("true and (false or true);", false);
+
+        var result = parser.parse();
+
+        assertThat(result.isOk()).isTrue();
+        assertThat(result.success()).hasSize(1);
+
+        ExprStmt exprStmt = (ExprStmt) result.success().get(0);
+        assertThat(exprStmt.expr()).isInstanceOf(Logical.class);
+
+        Logical logical = (Logical) exprStmt.expr();
+        assertThat(logical.op().lexeme()).isEqualTo(Lexemes.AND);
+        assertThat(logical.left()).isInstanceOf(Terminal.class);
+        assertThat(logical.right()).isInstanceOf(Group.class);
+
+        Group group = (Group) logical.right();
+        assertThat(group.group()).isInstanceOf(Logical.class);
+
+        Logical innerLogical = (Logical) group.group();
+        assertThat(innerLogical.op().lexeme()).isEqualTo(Lexemes.OR);
+    }
+
+    @Test
+    void shouldParseLogicalExpressionsWithVariables() {
+        Parser parser = new Parser("x and y or z;", false);
+
+        var result = parser.parse();
+
+        assertThat(result.isOk()).isTrue();
+        assertThat(result.success()).hasSize(1);
+
+        ExprStmt exprStmt = (ExprStmt) result.success().get(0);
+        assertThat(exprStmt.expr()).isInstanceOf(Logical.class);
+
+        Logical outerOr = (Logical) exprStmt.expr();
+        assertThat(outerOr.op().lexeme()).isEqualTo(Lexemes.OR);
+        assertThat(outerOr.right()).isInstanceOf(Terminal.class);
+
+        Terminal rightVar = (Terminal) outerOr.right();
+        assertThat(rightVar.token().lexeme()).isEqualTo(Lexemes.IDENTIFIER);
+    }
+
+    @Test
+    void shouldParseComplexLogicalExpression() {
+        Parser parser = new Parser("a and b or c and d;", false);
+
+        var result = parser.parse();
+
+        assertThat(result.isOk()).isTrue();
+        assertThat(result.success()).hasSize(1);
+
+        // Should parse as (a and b) or (c and d) due to precedence
+        ExprStmt exprStmt = (ExprStmt) result.success().get(0);
+        assertThat(exprStmt.expr()).isInstanceOf(Logical.class);
+
+        Logical outerOr = (Logical) exprStmt.expr();
+        assertThat(outerOr.op().lexeme()).isEqualTo(Lexemes.OR);
+        assertThat(outerOr.left()).isInstanceOf(Logical.class);
+        assertThat(outerOr.right()).isInstanceOf(Logical.class);
+
+        Logical leftAnd = (Logical) outerOr.left();
+        Logical rightAnd = (Logical) outerOr.right();
+        assertThat(leftAnd.op().lexeme()).isEqualTo(Lexemes.AND);
+        assertThat(rightAnd.op().lexeme()).isEqualTo(Lexemes.AND);
+    }
+
+    @Test
+    void shouldParseLogicalExpressionsWithComparisons() {
+        Parser parser = new Parser("x > 5 and y < 10;", false);
+
+        var result = parser.parse();
+
+        assertThat(result.isOk()).isTrue();
+        assertThat(result.success()).hasSize(1);
+
+        ExprStmt exprStmt = (ExprStmt) result.success().get(0);
+        assertThat(exprStmt.expr()).isInstanceOf(Logical.class);
+
+        Logical logical = (Logical) exprStmt.expr();
+        assertThat(logical.op().lexeme()).isEqualTo(Lexemes.AND);
+        assertThat(logical.left()).isInstanceOf(Binary.class);
+        assertThat(logical.right()).isInstanceOf(Binary.class);
+
+        Binary leftComparison = (Binary) logical.left();
+        Binary rightComparison = (Binary) logical.right();
+        assertThat(leftComparison.op().lexeme()).isEqualTo(Lexemes.GREATER);
+        assertThat(rightComparison.op().lexeme()).isEqualTo(Lexemes.LESS);
+    }
+
+    @Test
+    void shouldParseLogicalExpressionsInIfStatements() {
+        Parser parser = new Parser("if (x > 5 and y < 10) print \"valid\";", false);
+
+        var result = parser.parse();
+
+        assertThat(result.isOk()).isTrue();
+        assertThat(result.success()).hasSize(1);
+
+        IfStmt ifStmt = (IfStmt) result.success().get(0);
+        assertThat(ifStmt.condition()).isInstanceOf(Group.class);
+
+        Group conditionGroup = (Group) ifStmt.condition();
+        assertThat(conditionGroup.group()).isInstanceOf(Logical.class);
+
+        Logical logical = (Logical) conditionGroup.group();
+        assertThat(logical.op().lexeme()).isEqualTo(Lexemes.AND);
+    }
+
+    @Test
+    void shouldParseNestedLogicalExpressions() {
+        Parser parser = new Parser("(a or b) and (c or d);", false);
+
+        var result = parser.parse();
+
+        assertThat(result.isOk()).isTrue();
+        assertThat(result.success()).hasSize(1);
+
+        ExprStmt exprStmt = (ExprStmt) result.success().get(0);
+        assertThat(exprStmt.expr()).isInstanceOf(Logical.class);
+
+        Logical outerAnd = (Logical) exprStmt.expr();
+        assertThat(outerAnd.op().lexeme()).isEqualTo(Lexemes.AND);
+        assertThat(outerAnd.left()).isInstanceOf(Group.class);
+        assertThat(outerAnd.right()).isInstanceOf(Group.class);
+
+        Group leftGroup = (Group) outerAnd.left();
+        Group rightGroup = (Group) outerAnd.right();
+        assertThat(leftGroup.group()).isInstanceOf(Logical.class);
+        assertThat(rightGroup.group()).isInstanceOf(Logical.class);
+
+        Logical leftOr = (Logical) leftGroup.group();
+        Logical rightOr = (Logical) rightGroup.group();
+        assertThat(leftOr.op().lexeme()).isEqualTo(Lexemes.OR);
+        assertThat(rightOr.op().lexeme()).isEqualTo(Lexemes.OR);
     }
 }

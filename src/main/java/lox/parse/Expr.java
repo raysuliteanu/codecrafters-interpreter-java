@@ -1,13 +1,46 @@
 package lox.parse;
 
 import java.util.Objects;
-
 import lox.token.IdentifierToken;
 import lox.token.Token;
 
 public abstract sealed class Expr extends Ast {
 
+    public static final class Logical extends Expr {
+
+        private final Expr left;
+        private final Token op;
+        private final Expr right;
+
+        public Logical(Expr left, Token op, Expr right) {
+            Objects.nonNull(left);
+            Objects.nonNull(right);
+            Objects.nonNull(op);
+            this.op = op;
+            this.left = left;
+            this.right = right;
+        }
+
+        public Expr left() {
+            return left;
+        }
+
+        public Expr right() {
+            return right;
+        }
+
+        public Token op() {
+            return op;
+        }
+
+        @Override
+        public <T> T accept(AstVisitor<T> visitor) {
+            return visitor.visitLogical(this);
+        }
+    }
+
     public static final class Terminal extends Expr {
+
         private final Token token;
 
         public Terminal(Token token) {
@@ -26,6 +59,7 @@ public abstract sealed class Expr extends Ast {
     }
 
     public static final class Group extends Expr {
+
         private final Expr ast;
 
         public Group(Expr ast) {
@@ -44,6 +78,7 @@ public abstract sealed class Expr extends Ast {
     }
 
     public static final class Unary extends Expr {
+
         private final Token token;
         private final Expr expr;
 
@@ -69,6 +104,7 @@ public abstract sealed class Expr extends Ast {
     }
 
     public static final class Binary extends Expr {
+
         private final Expr left;
         private final Expr right;
         private final Token op;
@@ -101,6 +137,7 @@ public abstract sealed class Expr extends Ast {
     }
 
     public static final class Assignment extends Expr {
+
         private final Token id;
         private final Expr expr;
 

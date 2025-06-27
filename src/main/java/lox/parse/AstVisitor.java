@@ -12,6 +12,8 @@ import lox.parse.Stmt.ReturnStmt;
 import lox.parse.Stmt.WhileStmt;
 
 public interface AstVisitor<T> {
+    T visitLogical(Expr.Logical expr);
+
     T visitTerminal(Expr.Terminal expr);
 
     T visitGroup(Expr.Group expr);

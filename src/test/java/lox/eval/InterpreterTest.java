@@ -606,9 +606,8 @@ class InterpreterTest {
         
         var result = interpreter.evaluate("if (42) print \"hello\";");
         
-        assertThat(result.hasErr()).isTrue();
-        assertThat(result.error()).isNotEmpty();
-        assertThat(result.error().get(0)).isInstanceOf(EvalException.class);
+        // Non-boolean values are truthy in Lox (42 is truthy)
+        assertThat(result.hasErr()).isFalse();
     }
 
     @Test
@@ -617,9 +616,8 @@ class InterpreterTest {
         
         var result = interpreter.evaluate("if (\"hello\") print \"world\";");
         
-        assertThat(result.hasErr()).isTrue();
-        assertThat(result.error()).isNotEmpty();
-        assertThat(result.error().get(0)).isInstanceOf(EvalException.class);
+        // Strings are truthy in Lox ("hello" is truthy)
+        assertThat(result.hasErr()).isFalse();
     }
 
     @Test
@@ -628,9 +626,9 @@ class InterpreterTest {
         
         var result = interpreter.evaluate("if (nil) print \"world\";");
         
-        assertThat(result.hasErr()).isTrue();
-        assertThat(result.error()).isNotEmpty();
-        assertThat(result.error().get(0)).isInstanceOf(EvalException.class);
+        // nil is falsy in Lox, so the if statement doesn't execute
+        assertThat(result.hasErr()).isFalse();
+        assertThat(result.success()).isEmpty(); // if with falsy condition that doesn't execute returns null
     }
 
     @Test
@@ -665,5 +663,267 @@ class InterpreterTest {
         
         assertThat(result.hasErr()).isFalse();
         assertThat(result.success()).isEmpty(); // if without else that doesn't execute returns null
+    }
+
+    @Test
+    void shouldEvaluateLogicalAndWithTrueLeft() {
+        Interpreter interpreter = new Interpreter(true);
+        
+        var result = interpreter.evaluate("true and false");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        BooleanResult boolResult = (BooleanResult) result.success().get();
+        assertThat(boolResult.value()).isFalse();
+    }
+
+    @Test
+    void shouldEvaluateLogicalAndWithFalseLeft() {
+        Interpreter interpreter = new Interpreter(true);
+        
+        var result = interpreter.evaluate("false and true");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        BooleanResult boolResult = (BooleanResult) result.success().get();
+        assertThat(boolResult.value()).isFalse();
+    }
+
+    @Test
+    void shouldEvaluateLogicalOrWithTrueLeft() {
+        Interpreter interpreter = new Interpreter(true);
+        
+        var result = interpreter.evaluate("true or false");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        BooleanResult boolResult = (BooleanResult) result.success().get();
+        assertThat(boolResult.value()).isTrue();
+    }
+
+    @Test
+    void shouldEvaluateLogicalOrWithFalseLeft() {
+        Interpreter interpreter = new Interpreter(true);
+        
+        var result = interpreter.evaluate("false or true");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        BooleanResult boolResult = (BooleanResult) result.success().get();
+        assertThat(boolResult.value()).isTrue();
+    }
+
+    @Test
+    void shouldShortCircuitLogicalAndWithFalseLeft() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        // This should short-circuit and not evaluate the undefined variable
+        var result = interpreter.evaluate("false and undefinedVar;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        BooleanResult boolResult = (BooleanResult) result.success().get();
+        assertThat(boolResult.value()).isFalse();
+    }
+
+    @Test
+    void shouldShortCircuitLogicalOrWithTrueLeft() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        // This should short-circuit and not evaluate the undefined variable
+        var result = interpreter.evaluate("true or undefinedVar;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        BooleanResult boolResult = (BooleanResult) result.success().get();
+        assertThat(boolResult.value()).isTrue();
+    }
+
+    @Test
+    void shouldEvaluateLogicalAndWithNonBooleanValues() {
+        Interpreter interpreter = new Interpreter(true);
+        
+        var result = interpreter.evaluate("42 and \"hello\"");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        // In Lox, logical operators return the last evaluated value
+        StringResult stringResult = (StringResult) result.success().get();
+        assertThat(stringResult.value()).isEqualTo("hello");
+    }
+
+    @Test
+    void shouldEvaluateLogicalOrWithNonBooleanValues() {
+        Interpreter interpreter = new Interpreter(true);
+        
+        var result = interpreter.evaluate("nil or 42");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        // nil is falsy, so should return 42
+        DoubleResult doubleResult = (DoubleResult) result.success().get();
+        assertThat(doubleResult.value()).isEqualTo(42.0);
+    }
+
+    @Test
+    void shouldEvaluateChainedLogicalExpressions() {
+        Interpreter interpreter = new Interpreter(true);
+        
+        var result = interpreter.evaluate("true and false or true");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        // Should evaluate as (true and false) or true = false or true = true
+        BooleanResult boolResult = (BooleanResult) result.success().get();
+        assertThat(boolResult.value()).isTrue();
+    }
+
+    @Test
+    void shouldEvaluateComplexLogicalExpression() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("var x = 5; var y = 10; x > 3 and y < 15;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        BooleanResult boolResult = (BooleanResult) result.success().get();
+        assertThat(boolResult.value()).isTrue();
+    }
+
+    @Test
+    void shouldEvaluateLogicalExpressionsWithParentheses() {
+        Interpreter interpreter = new Interpreter(true);
+        
+        var result = interpreter.evaluate("true and (false or true)");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        BooleanResult boolResult = (BooleanResult) result.success().get();
+        assertThat(boolResult.value()).isTrue();
+    }
+
+    @Test
+    void shouldEvaluateLogicalAndWithVariables() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("var a = true; var b = false; a and b;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        BooleanResult boolResult = (BooleanResult) result.success().get();
+        assertThat(boolResult.value()).isFalse();
+    }
+
+    @Test
+    void shouldEvaluateLogicalOrWithVariables() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("var a = false; var b = true; a or b;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        BooleanResult boolResult = (BooleanResult) result.success().get();
+        assertThat(boolResult.value()).isTrue();
+    }
+
+    @Test
+    void shouldEvaluateLogicalExpressionsInIfStatements() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("var x = 5; var y = 10; var result = 0; if (x > 3 and y < 15) result = 42; result;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        DoubleResult doubleResult = (DoubleResult) result.success().get();
+        assertThat(doubleResult.value()).isEqualTo(42.0);
+    }
+
+    @Test
+    void shouldHandleLogicalExpressionsWithNilAndNumbers() {
+        Interpreter interpreter1 = new Interpreter(true);
+        Interpreter interpreter2 = new Interpreter(true);
+        Interpreter interpreter3 = new Interpreter(true);
+        
+        var result1 = interpreter1.evaluate("nil and 42");
+        var result2 = interpreter2.evaluate("0 and true");
+        var result3 = interpreter3.evaluate("nil or \"default\"");
+        
+        assertThat(result1.isOk()).isTrue();
+        assertThat(result2.isOk()).isTrue();
+        assertThat(result3.isOk()).isTrue();
+        
+        // nil is falsy, so "nil and 42" should return nil
+        NilResult nilResult = (NilResult) result1.success().get();
+        
+        // 0 is truthy in Lox, so "0 and true" should return true
+        BooleanResult boolResult = (BooleanResult) result2.success().get();
+        assertThat(boolResult.value()).isTrue();
+        
+        // nil is falsy, so "nil or \"default\"" should return "default"
+        StringResult stringResult = (StringResult) result3.success().get();
+        assertThat(stringResult.value()).isEqualTo("default");
+    }
+
+    @Test
+    void shouldEvaluateComplexNestedLogicalExpressions() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("var a = true; var b = false; var c = true; var d = false; (a or b) and (c or d);");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        // (true or false) and (true or false) = true and true = true
+        BooleanResult boolResult = (BooleanResult) result.success().get();
+        assertThat(boolResult.value()).isTrue();
+    }
+
+    @Test
+    void shouldEvaluateLogicalOperatorPrecedence() {
+        Interpreter interpreter = new Interpreter(true);
+        
+        var result = interpreter.evaluate("false or true and false");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        // Should evaluate as false or (true and false) = false or false = false
+        BooleanResult boolResult = (BooleanResult) result.success().get();
+        assertThat(boolResult.value()).isFalse();
+    }
+
+    @Test
+    void shouldEvaluateLogicalExpressionsWithAssignments() {
+        Interpreter interpreter = new Interpreter(false);
+        
+        var result = interpreter.evaluate("var x = false; var y = false; x = true and (y = true); x;");
+        
+        assertThat(result.isOk()).isTrue();
+        
+        BooleanResult boolResult = (BooleanResult) result.success().get();
+        assertThat(boolResult.value()).isTrue();
+    }
+
+    @Test
+    void shouldReturnCorrectValueFromLogicalOperators() {
+        Interpreter interpreter1 = new Interpreter(true);
+        Interpreter interpreter2 = new Interpreter(true);
+        Interpreter interpreter3 = new Interpreter(true);
+        
+        // Logical operators should return the last evaluated operand
+        var result1 = interpreter1.evaluate("\"first\" and \"second\"");
+        var result2 = interpreter2.evaluate("nil or \"default\"");
+        var result3 = interpreter3.evaluate("42 and nil");
+        
+        assertThat(result1.isOk()).isTrue();
+        assertThat(result2.isOk()).isTrue();
+        assertThat(result3.isOk()).isTrue();
+        
+        StringResult stringResult1 = (StringResult) result1.success().get();
+        assertThat(stringResult1.value()).isEqualTo("second");
+        
+        StringResult stringResult2 = (StringResult) result2.success().get();
+        assertThat(stringResult2.value()).isEqualTo("default");
+        
+        NilResult nilResult = (NilResult) result3.success().get();
+        // 42 is truthy, so it evaluates the right side and returns nil
     }
 }

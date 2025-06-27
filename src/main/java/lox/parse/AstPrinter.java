@@ -19,6 +19,11 @@ public class AstPrinter implements AstVisitor<String> {
     }
 
     @Override
+    public String visitLogical(Expr.Logical expr) {
+        return expr.left() + " " + expr.op().lexeme().value() + " " + expr.right();
+    }
+
+    @Override
     public String visitTerminal(Expr.Terminal expr) {
         if (expr.token() instanceof lox.token.ValueToken vt) {
             return vt.value().toString();
@@ -39,20 +44,26 @@ public class AstPrinter implements AstVisitor<String> {
 
     @Override
     public String visitBinary(Expr.Binary expr) {
-        return "(" + expr.op().lexeme().value() + " " + expr.left() + " " + expr.right() + ")";
+        return ("(" +
+                expr.op().lexeme().value() +
+                " " +
+                expr.left() +
+                " " +
+                expr.right() +
+                ")");
     }
 
     @Override
     public String visitAssignment(Expr.Assignment expr) {
-        return ((IdentifierToken) expr.identifier()).value() + " = " + expr.expression();
+        return (((IdentifierToken) expr.identifier()).value() +
+                " = " +
+                expr.expression());
     }
 
     @Override
     public String visitIfStmt(IfStmt ifStmt) {
         final StringBuilder sb = new StringBuilder("if (");
-        sb.append(ifStmt.condition())
-                .append(")\n")
-                .append(ifStmt.thenStmt());
+        sb.append(ifStmt.condition()).append(")\n").append(ifStmt.thenStmt());
 
         if (ifStmt.elseStmt().isPresent()) {
             sb.append("else").append(ifStmt.elseStmt());
@@ -86,31 +97,37 @@ public class AstPrinter implements AstVisitor<String> {
 
     @Override
     public String visitExprStmt(ExprStmt exprStmt) {
-        throw new UnsupportedOperationException("Unimplemented method 'visitExprStmt'");
+        throw new UnsupportedOperationException(
+                "Unimplemented method 'visitExprStmt'");
     }
 
     @Override
     public String visitReturnStmt(ReturnStmt returnStmt) {
-        throw new UnsupportedOperationException("Unimplemented method 'visitReturnStmt'");
+        throw new UnsupportedOperationException(
+                "Unimplemented method 'visitReturnStmt'");
     }
 
     @Override
     public String visitWhileStmt(WhileStmt whileStmt) {
-        throw new UnsupportedOperationException("Unimplemented method 'visitWhileStmt'");
+        throw new UnsupportedOperationException(
+                "Unimplemented method 'visitWhileStmt'");
     }
 
     @Override
     public String visitForStmt(ForStmt forStmt) {
-        throw new UnsupportedOperationException("Unimplemented method 'visitForStmt'");
+        throw new UnsupportedOperationException(
+                "Unimplemented method 'visitForStmt'");
     }
 
     @Override
     public String visitClazz(Clazz clazz) {
-        throw new UnsupportedOperationException("Unimplemented method 'visitClazz'");
+        throw new UnsupportedOperationException(
+                "Unimplemented method 'visitClazz'");
     }
 
     @Override
     public String visitFunc(Func func) {
-        throw new UnsupportedOperationException("Unimplemented method 'visitFunc'");
+        throw new UnsupportedOperationException(
+                "Unimplemented method 'visitFunc'");
     }
 }

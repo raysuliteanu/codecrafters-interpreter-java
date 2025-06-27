@@ -19,6 +19,7 @@ import lox.token.DoubleToken;
 import lox.token.Token;
 import lox.token.IdentifierToken;
 import lox.token.Tokens.Lexemes;
+import lox.util.Util;
 import lox.token.StringToken;
 import lox.token.ValueToken;
 
@@ -106,31 +107,25 @@ public class Interpreter {
     private EvaluationResult<?> ifStmt(Stmt.IfStmt ast) {
         trace("ifStmt");
         var cond = evalExpr(ast.condition());
-        if (cond instanceof BooleanResult br) {
-            trace("if cond is " + cond);
-            if (br.value()) {
-                trace("then branch");
-                return switch (ast.thenStmt()) {
-                    case Stmt s -> evalStatement(s);
-                    case Ast.Block b -> evalBlock(b);
-                    default -> throw new EvalException("todo: then block not stmt or block");
-                };
-            }
-
-            if (ast.elseStmt().isPresent()) {
-                trace("else branch");
-                var elseStmt = ast.elseStmt().get();
-                return switch (elseStmt) {
-                    case Stmt s -> evalStatement(s);
-                    case Ast.Block b -> evalBlock(b);
-                    default -> throw new EvalException("todo: else block not stmt or block");
-                };
-            }
-
-            return null;
+        var val = cond.value();
+        if (Util.isTruthy(val)) {
+            trace("executing then branch");
+            return switch (ast.thenStmt()) {
+                case Stmt s -> evalStatement(s);
+                case Ast.Block b -> evalBlock(b);
+                default -> throw new EvalException("TODO: then block not stmt or block");
+            };
+        } else if (ast.elseStmt().isPresent()) {
+            trace("executing else branch");
+            var elseStmt = ast.elseStmt().get();
+            return switch (elseStmt) {
+                case Stmt s -> evalStatement(s);
+                case Ast.Block b -> evalBlock(b);
+                default -> throw new EvalException("TODO: else block not stmt or block");
+            };
         }
 
-        throw new EvalException(cond.getClass().getName() + ": " + cond);
+        return null;
     }
 
     private EvaluationResult<?> printStmt(Stmt.PrintStmt ast) {
@@ -145,6 +140,7 @@ public class Interpreter {
     private EvaluationResult<?> evalExpr(Expr ast) {
         trace("evalExpr");
         return switch (ast) {
+            case Expr.Logical l -> evalLogical(l);
             case Expr.Terminal t -> evalTerminal(t);
             case Expr.Group g -> evalExpr(g.group());
             case Expr.Unary u -> evalUnary(u);
@@ -160,6 +156,25 @@ public class Interpreter {
         this.state.updateVariable(id, val);
 
         return val;
+    }
+
+    private EvaluationResult<?> evalLogical(final Expr.Logical logical) {
+        var lexeme = logical.op().lexeme();
+        assert lexeme == Lexemes.OR || lexeme == Lexemes.AND : "invalid operation " + lexeme.value();
+        var left = evalExpr(logical.left());
+
+        if (lexeme == Lexemes.OR) {
+            if (Util.isTruthy(left.value())) {
+                return left;
+            }
+        } else {
+            // lexeme == Lexemes.AND
+            if (!Util.isTruthy(left.value())) {
+                return left;
+            }
+        }
+
+        return evalExpr(logical.right());
     }
 
     private EvaluationResult<?> evalUnary(final Expr.Unary unary) {
