@@ -401,13 +401,24 @@ public class Parser {
             }
 
             return new Stmt.IfStmt(cond, thenStmt, elseStmt);
-        } else {
-            throw new UnexpectedEofException();
         }
+
+        throw new UnexpectedEofException();
     }
 
     private Ast whileStmt(final PeekableIterator<Token> tokens) {
-        throw new NotImplementedException("while statement");
+        trace("whileStmt");
+        var _token = tokens.next();
+        assert _token.lexeme() == Lexemes.WHILE;
+
+        if (tokens.hasNext()) {
+            var cond = expression(tokens);
+            var body = statement(tokens);
+
+            return new Stmt.WhileStmt(cond, body);
+        }
+
+        throw new UnexpectedEofException();
     }
 
     private Ast returnStmt(final PeekableIterator<Token> tokens) {

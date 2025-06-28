@@ -73,6 +73,15 @@ public class AstPrinter implements AstVisitor<String> {
     }
 
     @Override
+    public String visitWhileStmt(WhileStmt whileStmt) {
+        final StringBuilder sb = new StringBuilder("while (");
+        sb.append(whileStmt.condition()).append(")\n")
+                .append(whileStmt.body());
+
+        return sb.toString();
+    }
+
+    @Override
     public String visitVar(Var var) {
         var s = ((IdentifierToken) var.identifier()).value();
         if (var.initializer().isPresent()) {
@@ -105,12 +114,6 @@ public class AstPrinter implements AstVisitor<String> {
     public String visitReturnStmt(ReturnStmt returnStmt) {
         throw new UnsupportedOperationException(
                 "Unimplemented method 'visitReturnStmt'");
-    }
-
-    @Override
-    public String visitWhileStmt(WhileStmt whileStmt) {
-        throw new UnsupportedOperationException(
-                "Unimplemented method 'visitWhileStmt'");
     }
 
     @Override

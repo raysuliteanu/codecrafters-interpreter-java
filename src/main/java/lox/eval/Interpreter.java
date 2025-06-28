@@ -98,8 +98,8 @@ public class Interpreter {
             case Stmt.PrintStmt p -> printStmt(p);
             case Stmt.ExprStmt e -> exprStmt(e);
             case Stmt.IfStmt i -> ifStmt(i);
+            case Stmt.WhileStmt w -> whileStmt(w);
             case Stmt.ForStmt s -> throw new NotImplementedException(s.toString());
-            case Stmt.WhileStmt s -> throw new NotImplementedException(s.toString());
             case Stmt.ReturnStmt s -> throw new NotImplementedException(s.toString());
         };
     }
@@ -123,6 +123,20 @@ public class Interpreter {
                 case Ast.Block b -> evalBlock(b);
                 default -> throw new EvalException("TODO: else block not stmt or block");
             };
+        }
+
+        return null;
+    }
+
+    private EvaluationResult<?> whileStmt(Stmt.WhileStmt ast) {
+        trace("whileStmt");
+        while (Util.isTruthy(evalExpr(ast.condition()).value())) {
+            trace("executing while body");
+            switch (ast.body()) {
+                case Stmt s -> evalStatement(s);
+                case Ast.Block b -> evalBlock(b);
+                default -> throw new EvalException("TODO: while body not stmt or block");
+            }
         }
 
         return null;

@@ -36,17 +36,33 @@ public abstract sealed class Stmt extends Ast {
         }
     }
 
+    public static final class WhileStmt extends Stmt {
+        private final Expr condition;
+        private final Ast body;
+
+        public WhileStmt(final Expr condition, final Ast body) {
+            this.condition = condition;
+            this.body = body;
+        }
+
+        public Expr condition() {
+            return condition;
+        }
+
+        public Ast body() {
+            return body;
+        }
+
+        @Override
+        public <T> T accept(AstVisitor<T> visitor) {
+            return visitor.visitWhileStmt(this);
+        }
+    }
+
     public static final class ForStmt extends Stmt {
         @Override
         public <T> T accept(AstVisitor<T> visitor) {
             return visitor.visitForStmt(this);
-        }
-    }
-
-    public static final class WhileStmt extends Stmt {
-        @Override
-        public <T> T accept(AstVisitor<T> visitor) {
-            return visitor.visitWhileStmt(this);
         }
     }
 
